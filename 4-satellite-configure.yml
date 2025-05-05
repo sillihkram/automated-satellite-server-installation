@@ -1,6 +1,6 @@
 ---
 - name: Configure Red Hat Satellite installation
-  hosts: dschubba.openincite.net
+  hosts: all
   vars_files: vault.yml
 
   tasks:
