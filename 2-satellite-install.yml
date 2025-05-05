@@ -1,0 +1,28 @@
+---
+- name: Install and Configure Red Hat Satellite Server
+  hosts: dschubba.openincite.net
+  vars_files: vault.yml
+  roles:
+    - role: redhat.satellite_operations.installer
+      vars:
+        satellite_installer_scenario: satellite
+        satellite_installer_package: satellite-installer
+        satellite_installer_no_colors: true
+        satellite_installer_options:
+          - '--foreman-initial-organization "openincite.net"'
+          - '--foreman-initial-admin-password "{{ satellite_password }}"'
+    - role: redhat.satellite_operations.cloud_connector
+      vars:
+        satellite_cloud_connector_url: '{{ satellite_url }}'
+        satellite_cloud_connector_user: '{{ satellite_username }}'
+        satellite_cloud_connector_password: '{{ satellite_password }}'
+
+  tasks:
+
+    - name: Ensure Postgresql has the correct permissions to run
+      ansible.builtin.file:
+        path: '/usr/bin/postmaster'
+        owner: 'postgres'
+        group: 'postgres'
+        mode: '755'
+        state: 'directory'
