@@ -1,0 +1,47 @@
+- name: Subscribe host and install required packages
+  hosts: all
+  vars_files: vault.yaml
+  vars:
+    repos:
+      - rhel-9-for-x86_64-baseos-rpms
+      - rhel-9-for-x86_64-appstream-rpms
+      - satellite-6.16-for-rhel-9-x86_64-rpms
+      - satellite-maintenance-6.16-for-rhel-9-x86_64-rpms
+    packages:
+      - fapolicyd
+      - satellite
+      - rhel-system-roles
+      - nfs-utils
+      - vim-enhanced
+      - virt-who
+
+  tasks:
+
+    - name: Register to Red Hat Subscription Management Network
+      redhat.rhel_system_roles.redhat_subscription:
+        state: present
+        username: "{{ rhsm_username }}"
+        password: "{{ rhsm_password }}"
+        release: 9.5
+        auto_attach: true
+
+    - name: Disable all RHSM repositories
+      redhat.rhel_system_roles.rhsm_repository:
+        name: '*'
+        state: disabled
+
+    - name: Enable required RHSM Repositories
+      redhat.rhel_system_roles.rhsm_repository:
+        name: "{{ repos }}"
+        state: enabled
+
+    - name: Install required packages
+      ansible.builtin.dnf:
+        name: "{{ packages }}"
+        state: latest
+
+    - name: Enable and start fapolicyd service
+      ansible.builtin.service:
+        name: fapolicyd
+        state: started
+        enabled: true
