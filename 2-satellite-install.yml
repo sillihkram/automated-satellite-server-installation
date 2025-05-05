@@ -1,6 +1,6 @@
 ---
 - name: Install and Configure Red Hat Satellite Server
-  hosts: dschubba.openincite.net
+  hosts: all
   vars_files: vault.yml
   roles:
     - role: redhat.satellite_operations.installer
