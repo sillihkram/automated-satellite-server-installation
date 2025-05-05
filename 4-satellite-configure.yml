@@ -1,0 +1,75 @@
+---
+- name: Configure Red Hat Satellite installation
+  hosts: dschubba.openincite.net
+  vars_files: vault.yml
+
+  tasks:
+    - name: Copy manifest to Satellite Server
+      ansible.builtin.copy:
+        src: files/manifest.zip
+        dest: '/tmp/'
+        owner: 'root'
+        group: 'root'
+        mode: '0644'
+
+    - name: Create vmware compute resource
+      redhat.satellite.compute_resource:
+        name: '{{ item.name }}'
+        organizations:
+          - 'openincite.net'
+        locations:
+          - 'Default Location'
+        provider: vmware
+        provider_params:
+          caching_enabled: false
+          url: '{{ item.url }}'
+          user: '{{ vmware_username }}'
+          password: '{{ vmware_password }}'
+          datacenter: 'ha-datacenter'
+        server_url: '{{ satellite_url }}'
+        username: '{{ satellite_username }}'
+        password: '{{ satellite_password }}'
+        state: present
+      loop:
+        - { name: 'vhost00', url: '192.168.1.20' }
+        - { name: 'vhost01', url: '192.168.1.21' }
+
+    - name: "Enable RHEL 9 App Stream & Base OS RPM repositories"
+      redhat.satellite.repository_set:
+        username: "{{ satellite_username }}"
+        password: '{{ satellite_password }}'
+        server_url: '{{ satellite_url }}'
+        organization: "openincite.net"
+        label: '{{ item.label }}'
+        repositories:
+          - releasever: "9"
+        state: 'enabled'
+      loop:
+        - { label: 'rhel-9-for-x86_64-baseos-rpms' }
+        - { label: 'rhel-9-for-x86_64-appstream-rpms' }
+
+    - name: "Create or update weekly RHEL sync plan"
+      redhat.satellite.sync_plan:
+        username: '{{ satellite_username }}'
+        password: '{{ satellite_password }}'
+        server_url: '{{ satellite_url }}'
+        name: "Weekly RHEL Sync"
+        organization: "openincite.net"
+        interval: "weekly"
+        enabled: true
+        sync_date: "2025-03-04 19:00:00 UTC"
+        products:
+          - 'Red Hat Enterprise Linux for x86_64'
+        state: present
+
+    - name: "Sync Red Hat Enterprise Linux for x86_64 Repositories"
+      redhat.satellite.repository_sync:
+        username: '{{ satellite_username }}'
+        password: '{{ satellite_password }}'
+        server_url: '{{ satellite_url }}'
+        repository: '{{ item.repo }}'
+        product: "Red Hat Enterprise Linux for x86_64"
+        organization: "openincite.net"
+      loop:
+        - { repo: 'Red Hat Enterprise Linux 9 for x86_64 - BaseOS RPMs 9' }
+        - { repo: 'Red Hat Enterprise Linux 9 for x86_64 - AppStream RPMs 9' }
