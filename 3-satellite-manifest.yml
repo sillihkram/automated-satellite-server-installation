@@ -1,0 +1,12 @@
+  roles:
+    - role: redhat.satellite.manifest
+      vars:
+        satellite_server_url: '{{ satellite_url }}'
+        satellite_username: '{{ satellite_username }}'
+        satellite_password: '{{ satellite_password }}'
+        satellite_organization: "openincite.net"
+        satellite_manifest_path: "~/manifest.zip"
+        satellite_manifest_download: true
+        satellite_rhsm_username: '{{ rhsm_username }}'
+        satellite_rhsm_password: '{{ rhsm_password }}'
+        satellite_manifest_uuid: "9bfbeddb-2885-4ce0-8bbe-1bc812de39d4"
