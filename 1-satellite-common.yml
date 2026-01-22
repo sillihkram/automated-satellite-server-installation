@@ -1,6 +1,6 @@
 - name: Subscribe host and install required packages
   hosts: all
-  vars_files: vault.yaml
+  vars_files: vault.yml
   vars:
     repos:
       - rhel-9-for-x86_64-baseos-rpms
