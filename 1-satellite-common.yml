@@ -22,7 +22,7 @@
         state: present
         username: "{{ rhsm_username }}"
         password: "{{ rhsm_password }}"
-        release: 9.5
+        release: 9.7
         auto_attach: true
 
     - name: Disable all RHSM repositories
