@@ -7,7 +7,6 @@
       - rhel-9-for-x86_64-appstream-rpms
       - satellite-6.17-for-rhel-9-x86_64-rpms
       - satellite-maintenance-6.17-for-rhel-9-x86_64-rpms
-    ansible_remote_tmp: /dev/shm/ansible
     packages:
       - fapolicyd
       - satellite
@@ -15,6 +14,7 @@
       - nfs-utils
       - vim-enhanced
       - virt-who
+    ansible_remote_tmp: /dev/shm/ansible
     fapolicyd_setup_enable_service: true
     fapolicyd_setup_integrity: sha256
     fapolicyd_setup_trust: rpmdb,file
