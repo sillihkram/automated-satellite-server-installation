@@ -1,3 +1,4 @@
+---
 - name: Subscribe host and install required packages
   hosts: all
   vars_files: vault.yml
@@ -55,12 +56,22 @@
         owner: root
         group: root
         mode: '0644'
+      notify: 
+        - Compile fapolicyd rules
+        - Restart fapolicyd service
+
+    - name: Ensure fapolicyd service is enabled and started
+      ansible.builtin.service:
+        name: fapolicyd
+        state: started
+        enabled: true
+
+  handlers:
 
     - name: Compile fapolicyd rules
       ansible.builtin.command: fagenrules --load
 
-    - name: Enable and start fapolicyd service
+    - name: Restart fapolicyd service
       ansible.builtin.service:
         name: fapolicyd
         state: restarted
-        enabled: true
