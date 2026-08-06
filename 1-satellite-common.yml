@@ -7,6 +7,7 @@
       - rhel-9-for-x86_64-appstream-rpms
       - satellite-6.17-for-rhel-9-x86_64-rpms
       - satellite-maintenance-6.17-for-rhel-9-x86_64-rpms
+    ansible_remote_tmp: /dev/shm/ansible
     packages:
       - fapolicyd
       - satellite
@@ -14,6 +15,9 @@
       - nfs-utils
       - vim-enhanced
       - virt-who
+    fapolicyd_setup_enable_service: true
+    fapolicyd_setup_integrity: sha256
+    fapolicyd_setup_trust: rpmdb,file
 
   tasks:
 
@@ -39,6 +43,18 @@
       ansible.builtin.dnf:
         name: "{{ packages }}"
         state: latest
+
+    - name: Run the fapolicyd RHEL system role
+      ansible.builtin.include_role:
+        name: redhat.rhel_system_roles.fapolicyd
+
+    - name: Add custom fapolicyd rule for Ansible AAP execution
+      ansible.builtin.copy:
+        dest: /etc/fapolicyd/rules.d/80-ansible.rules
+        content: "allow perm=any uid=admin : dir=/home/admin/.ansible/tmp/ ftype=text/x-python\n"
+        owner: root
+        group: root
+        mode: '0644'
 
     - name: Enable and start fapolicyd service
       ansible.builtin.service:
