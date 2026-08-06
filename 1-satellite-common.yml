@@ -56,8 +56,11 @@
         group: root
         mode: '0644'
 
+    - name: Compile fapolicyd rules
+      ansible.builtin.command: fagenrules --load
+
     - name: Enable and start fapolicyd service
       ansible.builtin.service:
         name: fapolicyd
-        state: started
+        state: restarted
         enabled: true
