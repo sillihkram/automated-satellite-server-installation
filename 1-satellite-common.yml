@@ -51,7 +51,7 @@
 
     - name: Add custom fapolicyd rule for Ansible AAP execution
       ansible.builtin.copy:
-        dest: /etc/fapolicyd/rules.d/80-ansible.rules
+        dest: /etc/fapolicyd/rules.d/10-ansible.rules
         content: "allow perm=any uid=admin : dir=/home/admin/.ansible/tmp/\n"
         owner: root
         group: root
