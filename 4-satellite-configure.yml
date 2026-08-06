@@ -1,5 +1,5 @@
 ---
-- name: Configure Red Hat Satellite installation
+- name: Configure Red Hat Satellite Server
   hosts: all
   vars_files: vault.yml
 
@@ -34,7 +34,7 @@
         - { name: 'vhost00', url: '192.168.1.20' }
         - { name: 'vhost01', url: '192.168.1.21' }
 
-    - name: "Enable RHEL 9 App Stream & Base OS RPM repositories"
+    - name: "Enable RHEL 9 Base OS & App Stream repositories"
       redhat.satellite.repository_set:
         username: "{{ satellite_username }}"
         password: '{{ satellite_password }}'
@@ -47,6 +47,20 @@
       loop:
         - { label: 'rhel-9-for-x86_64-baseos-rpms' }
         - { label: 'rhel-9-for-x86_64-appstream-rpms' }
+        
+    - name: "Enable RHEL 10 Base OS & App Stream repositories"
+      redhat.satellite.repository_set:
+        username: "{{ satellite_username }}"
+        password: '{{ satellite_password }}'
+        server_url: '{{ satellite_url }}'
+        organization: "openincite.net"
+        label: '{{ item.label }}'
+        repositories:
+          - releasever: "9"
+        state: 'enabled'
+      loop:
+        - { label: 'rhel-10-for-x86_64-baseos-rpms' }
+        - { label: 'rhel-10-for-x86_64-appstream-rpms' }
 
     - name: "Create or update weekly RHEL sync plan"
       redhat.satellite.sync_plan:
