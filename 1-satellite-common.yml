@@ -49,10 +49,10 @@
       ansible.builtin.include_role:
         name: redhat.rhel_system_roles.fapolicyd
 
-    - name: Add custom fapolicyd rule for Ansible AAP execution
+- name: Add custom fapolicyd rule for Ansible AAP execution
       ansible.builtin.copy:
         dest: /etc/fapolicyd/rules.d/80-ansible.rules
-        content: "allow perm=any uid=admin : dir=/home/admin/.ansible/tmp/ ftype=text/x-python\n"
+        content: "allow perm=any uid=admin : dir=/home/admin/.ansible/tmp/\n"
         owner: root
         group: root
         mode: '0644'
