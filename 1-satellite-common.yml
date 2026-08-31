@@ -73,7 +73,6 @@
         line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }} {{ ansible_hostname }}"
         state: present
  
-
   handlers:
 
     - name: Compile fapolicyd rules
