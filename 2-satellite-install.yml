@@ -1,7 +1,6 @@
 ---
 - name: Install and Configure Red Hat Satellite Server
   hosts: all
-  vars_files: vault.yml
   roles:
     - role: redhat.satellite_operations.installer
       vars:
@@ -19,10 +18,12 @@
 
   tasks:
 
-    - name: Ensure Postgresql has the correct permissions to run
-      ansible.builtin.file:
-        path: '/usr/bin/postmaster'
-        owner: 'postgres'
-        group: 'postgres'
-        mode: '755'
-        state: 'directory'
+    # Temporarily commented out while fapolicyd is disabled.
+    # Note: changed state from 'directory' to 'file' so it works when you re-enable it.
+    # - name: Ensure Postgresql has the correct permissions to run
+    #   ansible.builtin.file:
+    #     path: '/usr/bin/postmaster'
+    #     owner: 'postgres'
+    #     group: 'postgres'
+    #     mode: '0755'
+    #     state: 'file'
