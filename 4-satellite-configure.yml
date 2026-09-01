@@ -38,22 +38,23 @@
 
         - name: Create virt-who configurations for VMware vCenters
           ansible.builtin.uri:
-            url: "{{ satellite_url }}/katello/api/v2/virt_who_configurations"
+            url: "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs"
             user: "{{ satellite_username }}"
             password: "{{ satellite_password }}"
             method: POST
             force_basic_auth: true
             body_format: json
             body:
-              organization_id: "{{ satellite_org }}"  # Passes org scope in body
-              name: "virt-who-{{ item.name }}"
-              hypervisor_type: "esx"
-              hypervisor_server: "{{ item.url }}"
-              hypervisor_username: "{{ vmware_username }}"
-              hypervisor_password: "{{ vmware_password }}"
-              interval: 60
-              hypervisor_id: "hostname"
-              filtering_mode: "none"
+              organization_id: "{{ satellite_org }}"
+              foreman_virt_who_configure_config:
+                name: "virt-who-{{ item.name }}"
+                hypervisor_type: "esx"
+                hypervisor_server: "{{ item.url }}"
+                hypervisor_username: "{{ vmware_username }}"
+                hypervisor_password: "{{ vmware_password }}"
+                interval: "60"
+                hypervisor_id: "hostname"
+                filtering_mode: 0
             status_code: [200, 201, 422]
             validate_certs: false
           loop: "{{ vcenters }}"
