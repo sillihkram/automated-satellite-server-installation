@@ -27,7 +27,7 @@
         - { name: 'vhost00', url: '192.168.1.20' }
         - { name: 'vhost01', url: '192.168.1.21' }
 
-    - name: Enable RHEL 9 and 10 Repositories
+    - name: Enable RHEL 9 and 10 Repositories (BaseOS, AppStream, Extensions)
       redhat.satellite.repository_set:
         organization: "{{ satellite_org }}"
         label: '{{ item.label }}'
@@ -37,8 +37,10 @@
       loop:
         - { label: 'rhel-9-for-x86_64-baseos-rpms', version: "9" }
         - { label: 'rhel-9-for-x86_64-appstream-rpms', version: "9" }
+        - { label: 'rhel-9-for-x86_64-extensions-rpms', version: "9" }
         - { label: 'rhel-10-for-x86_64-baseos-rpms', version: "10" }
         - { label: 'rhel-10-for-x86_64-appstream-rpms', version: "10" }
+        - { label: 'rhel-10-for-x86_64-extensions-rpms', version: "10" }
 
     - name: Create or update weekly RHEL sync plan
       redhat.satellite.sync_plan:
@@ -59,7 +61,9 @@
       loop:
         - 'Red Hat Enterprise Linux 9 for x86_64 - BaseOS RPMs 9'
         - 'Red Hat Enterprise Linux 9 for x86_64 - AppStream RPMs 9'
+        - 'Red Hat Enterprise Linux 9 for x86_64 - Extensions RPMs 9'
         - 'Red Hat Enterprise Linux 10 for x86_64 - BaseOS RPMs 10'
         - 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs 10'
+        - 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs 10'
       async: 7200
       poll: 0
