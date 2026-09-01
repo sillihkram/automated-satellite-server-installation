@@ -1,8 +1,6 @@
 ---
 - name: Pull subscription manifest from Red Hat and import to Satellite
-  hosts: localhost
-  gather_facts: false
-  
+  hosts: all 
   vars:
     # Your custom credential definitions (can be passed via Ansible Vault or extra vars)
     satellite_url: "https://dschubba.openincite.net"
