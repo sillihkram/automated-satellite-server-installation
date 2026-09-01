@@ -9,7 +9,7 @@
     rhsm_username: "mark_hillis"
     rhsm_password: ""
 
- roles:
+  roles:
     - role: redhat.satellite.manifest
       vars:
         # Connection variables
