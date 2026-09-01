@@ -37,21 +37,24 @@
           loop: "{{ vcenters }}"
 
         - name: Create virt-who configurations for VMware vCenters
-          redhat.satellite.virt_who:
-            server_url: "{{ satellite_url }}"
-            username: "{{ satellite_username }}"
+          ansible.builtin.uri:
+            url: "{{ satellite_url }}/katello/api/v2/organizations/{{ satellite_org }}/virt_who_configurations"
+            user: "{{ satellite_username }}"
             password: "{{ satellite_password }}"
+            method: POST
+            force_basic_auth: true
+            body_format: json
+            body:
+              name: "virt-who-{{ item.name }}"
+              hypervisor_type: "esx"
+              hypervisor_server: "{{ item.url }}"
+              hypervisor_username: "{{ vmware_username }}"
+              hypervisor_password: "{{ vmware_password }}"
+              interval: 60
+              hypervisor_id: "hostname"
+              filtering_mode: "none"
+            status_code: [200, 201, 422]
             validate_certs: false
-            name: "virt-who-{{ item.name }}"
-            organization: "{{ satellite_org }}"
-            hypervisor_type: "esx"
-            hypervisor_server: "{{ item.url }}"
-            hypervisor_username: "{{ vmware_username }}"
-            hypervisor_password: "{{ vmware_password }}"
-            interval: 60
-            hypervisor_id: "hostname"
-            filtering_mode: "none"
-            state: present
           loop: "{{ vcenters }}"
 
         - name: Enable RHEL 9 and 10 Repositories (BaseOS, AppStream, Extensions)
@@ -101,8 +104,8 @@
             - 'Red Hat Enterprise Linux 9 for x86_64 - BaseOS RPMs 9'
             - 'Red Hat Enterprise Linux 9 for x86_64 - AppStream RPMs 9'
             - 'Red Hat Enterprise Linux 9 for x86_64 - Extensions RPMs 9'
-            - 'Red Hat Enterprise Linux 10 for x86_64 - BaseOS RPMs 10'
-            - 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs 10'
-            - 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs 10'
+            - 'Red Hat Enterprise Linux 10 for x86_64 - BaseOS RPMs'
+            - 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs'
+            - 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs'
           async: 7200
           poll: 0
