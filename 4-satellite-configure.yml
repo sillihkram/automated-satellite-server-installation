@@ -6,6 +6,9 @@
   vars:
     satellite_org: "openincite.net"
     satellite_product: "Red Hat Enterprise Linux for x86_64"
+    vcenters:
+      - { name: 'vhost00', url: '192.168.1.20' }
+      - { name: 'vhost01', url: '192.168.1.21' }
 
   tasks:
     - name: Configure Satellite Server Resources and Repositories
@@ -14,21 +17,16 @@
       block:
         - name: Create VMware compute resources
           redhat.satellite.compute_resource:
-            # Satellite API Connection (Passed directly or via AAP Credentials)
             server_url: "{{ satellite_url }}"
             username: "{{ satellite_username }}"
             password: "{{ satellite_password }}"
             validate_certs: false
-            
-            # Compute Resource Configuration
             name: "{{ item.name }}"
             organizations:
               - "{{ satellite_org }}"
             locations:
               - 'Default Location'
             provider: vmware
-            
-            # VMware Provider Parameters (All vCenter settings go here)
             provider_params:
               url: "{{ item.url }}"
               user: "{{ vmware_username }}"
@@ -36,9 +34,25 @@
               datacenter: "ha-datacenter"
               caching_enabled: false
             state: present
-          loop:
-            - { name: 'vhost00', url: '192.168.1.20' }
-            - { name: 'vhost01', url: '192.168.1.21' }
+          loop: "{{ vcenters }}"
+
+        - name: Create virt-who configurations for VMware vCenters
+          redhat.satellite.virt_who_config:
+            server_url: "{{ satellite_url }}"
+            username: "{{ satellite_username }}"
+            password: "{{ satellite_password }}"
+            validate_certs: false
+            name: "virt-who-{{ item.name }}"
+            organization: "{{ satellite_org }}"
+            hypervisor_type: "esx"
+            hypervisor_server: "{{ item.url }}"
+            hypervisor_username: "{{ vmware_username }}"
+            hypervisor_password: "{{ vmware_password }}"
+            interval: 60
+            hypervisor_id: "hostname"
+            filtering_mode: "none"
+            state: present
+          loop: "{{ vcenters }}"
 
         - name: Enable RHEL 9 and 10 Repositories (BaseOS, AppStream, Extensions)
           redhat.satellite.repository_set:
@@ -92,27 +106,3 @@
             - 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs 10'
           async: 7200
           poll: 0
-          
-        - name: Create virt-who configurations for VMware vCenters
-          redhat.satellite.virt_who_config:
-            server_url: "{{ satellite_url }}"
-            username: "{{ satellite_username }}"
-            password: "{{ satellite_password }}"
-            validate_certs: false
-            
-            # Virt-Who Settings
-            name: "virt-who-{{ item.name }}"
-            organization: "{{ satellite_org }}"
-            hypervisor_type: "esx"
-            hypervisor_server: "{{ item.url }}"
-            hypervisor_username: "{{ vmware_username }}"
-            hypervisor_password: "{{ vmware_password }}"
-            
-            # Options
-            interval: 60
-            hypervisor_id: "hostname"
-            filtering_mode: "none"
-            state: present
-          loop:
-            - { name: 'vhost00', url: '192.168.1.20' }
-            - { name: 'vhost01', url: '192.168.1.21' }
