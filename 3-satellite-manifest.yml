@@ -17,6 +17,7 @@
         foreman_username: "{{ satellite_username }}"
         foreman_password: "{{ satellite_password }}"
         foreman_organization: "openincite.net"
+        satellite_organization: "openincite.net"
         
         # Manifest download variables expected by the role
         foreman_manifest_download: true
