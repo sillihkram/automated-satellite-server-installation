@@ -93,12 +93,12 @@
       ignore_errors: true 
       changed_when: false
 
-    - name: Allow Satellite service in firewalld
-      ansible.posix.firewalld:
-        service: RH-Satellite-6
-        permanent: true
-        state: enabled
-        immediate: true
+#    - name: Allow Satellite service in firewalld
+#      ansible.posix.firewalld:
+#        service: RH-Satellite-6
+#        permanent: true
+#        state: enabled
+#        immediate: true
  
   handlers:
 
