@@ -9,19 +9,18 @@
     rhsm_username: "mark_hillis"
     rhsm_password: ""
 
-  roles:
+ roles:
     - role: redhat.satellite.manifest
       vars:
-        # Core connection variables expected by the role
-        foreman_server_url: "{{ satellite_url }}"
-        foreman_username: "{{ satellite_username }}"
-        foreman_password: "{{ satellite_password }}"
-        foreman_organization: "openincite.net"
+        # Connection variables
+        satellite_server_url: "{{ satellite_url }}"
+        satellite_username: "{{ satellite_username }}"
+        satellite_password: "{{ satellite_password }}"
         satellite_organization: "openincite.net"
         
-        # Manifest download variables expected by the role
-        foreman_manifest_download: true
-        foreman_manifest_uuid: "9bfbeddb-2885-4ce0-8bbe-1bc812de39d4"
-        foreman_rhsm_username: "{{ rhsm_username }}"
-        foreman_rhsm_password: "{{ rhsm_password }}"
-        foreman_manifest_path: "~/manifest.zip"
+        # Download and Path variables 
+        satellite_manifest_download: true
+        satellite_manifest_uuid: "9bfbeddb-2885-4ce0-8bbe-1bc812de39d4"
+        satellite_rhsm_username: "{{ rhsm_username }}"
+        satellite_rhsm_password: "{{ rhsm_password }}"
+        satellite_manifest_path: "~/manifest.zip"
