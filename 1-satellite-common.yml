@@ -65,11 +65,11 @@
     #     state: started
     #     enabled: true
 
-    - name: Stop and disable fapolicyd
-      ansible.builtin.systemd:
-        name: fapolicyd
-        state: stopped
-        enabled: false
+    # - name: Stop and disable fapolicyd
+    #   ansible.builtin.systemd:
+    #     name: fapolicyd
+    #     state: stopped
+    #     enabled: false
     
     - name: Add hostname to /etc/hosts
       ansible.builtin.lineinfile:
