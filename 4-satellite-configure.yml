@@ -1,22 +1,18 @@
 ---
 - name: Configure Red Hat Satellite Server
   hosts: all
-  vars_files: vault.yml
+  gather_facts: false
+
+  vars:
+    satellite_org: "openincite.net"
+    satellite_product: "Red Hat Enterprise Linux for x86_64"
 
   tasks:
-    - name: Copy manifest to Satellite Server
-      ansible.builtin.copy:
-        src: files/manifest.zip
-        dest: '/tmp/'
-        owner: 'root'
-        group: 'root'
-        mode: '0644'
-
-    - name: Create vmware compute resource
+    - name: Create VMware compute resources
       redhat.satellite.compute_resource:
         name: '{{ item.name }}'
         organizations:
-          - 'openincite.net'
+          - "{{ satellite_org }}"
         locations:
           - 'Default Location'
         provider: vmware
@@ -26,64 +22,48 @@
           user: '{{ vmware_username }}'
           password: '{{ vmware_password }}'
           datacenter: 'ha-datacenter'
-        server_url: '{{ satellite_url }}'
-        username: '{{ satellite_username }}'
-        password: '{{ satellite_password }}'
         state: present
       loop:
         - { name: 'vhost00', url: '192.168.1.20' }
         - { name: 'vhost01', url: '192.168.1.21' }
+      run_once: true
 
-    - name: "Enable RHEL 9 Base OS & App Stream repositories"
+    - name: Enable RHEL 9 and 10 Repositories
       redhat.satellite.repository_set:
-        username: "{{ satellite_username }}"
-        password: '{{ satellite_password }}'
-        server_url: '{{ satellite_url }}'
-        organization: "openincite.net"
+        organization: "{{ satellite_org }}"
         label: '{{ item.label }}'
         repositories:
-          - releasever: "9"
-        state: 'enabled'
+          - releasever: "{{ item.version }}"
+        state: enabled
       loop:
-        - { label: 'rhel-9-for-x86_64-baseos-rpms' }
-        - { label: 'rhel-9-for-x86_64-appstream-rpms' }
-        
-    - name: "Enable RHEL 10 Base OS & App Stream repositories"
-      redhat.satellite.repository_set:
-        username: "{{ satellite_username }}"
-        password: '{{ satellite_password }}'
-        server_url: '{{ satellite_url }}'
-        organization: "openincite.net"
-        label: '{{ item.label }}'
-        repositories:
-          - releasever: "9"
-        state: 'enabled'
-      loop:
-        - { label: 'rhel-10-for-x86_64-baseos-rpms' }
-        - { label: 'rhel-10-for-x86_64-appstream-rpms' }
+        - { label: 'rhel-9-for-x86_64-baseos-rpms', version: "9" }
+        - { label: 'rhel-9-for-x86_64-appstream-rpms', version: "9" }
+        - { label: 'rhel-10-for-x86_64-baseos-rpms', version: "10" }
+        - { label: 'rhel-10-for-x86_64-appstream-rpms', version: "10" }
+      run_once: true
 
-    - name: "Create or update weekly RHEL sync plan"
+    - name: Create or update weekly RHEL sync plan
       redhat.satellite.sync_plan:
-        username: '{{ satellite_username }}'
-        password: '{{ satellite_password }}'
-        server_url: '{{ satellite_url }}'
         name: "Weekly RHEL Sync"
-        organization: "openincite.net"
+        organization: "{{ satellite_org }}"
         interval: "weekly"
         enabled: true
         sync_date: "2025-03-04 19:00:00 UTC"
         products:
-          - 'Red Hat Enterprise Linux for x86_64'
+          - "{{ satellite_product }}"
         state: present
+      run_once: true
 
-    - name: "Sync Red Hat Enterprise Linux for x86_64 Repositories"
+    - name: Sync RHEL 9 and 10 Repositories
       redhat.satellite.repository_sync:
-        username: '{{ satellite_username }}'
-        password: '{{ satellite_password }}'
-        server_url: '{{ satellite_url }}'
-        repository: '{{ item.repo }}'
-        product: "Red Hat Enterprise Linux for x86_64"
-        organization: "openincite.net"
+        repository: '{{ item }}'
+        product: "{{ satellite_product }}"
+        organization: "{{ satellite_org }}"
       loop:
-        - { repo: 'Red Hat Enterprise Linux 9 for x86_64 - BaseOS RPMs 9' }
-        - { repo: 'Red Hat Enterprise Linux 9 for x86_64 - AppStream RPMs 9' }
+        - 'Red Hat Enterprise Linux 9 for x86_64 - BaseOS RPMs 9'
+        - 'Red Hat Enterprise Linux 9 for x86_64 - AppStream RPMs 9'
+        - 'Red Hat Enterprise Linux 10 for x86_64 - BaseOS RPMs 10'
+        - 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs 10'
+      async: 7200
+      poll: 0
+      run_once: true
