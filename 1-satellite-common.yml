@@ -86,6 +86,13 @@
       # We ignore errors in case the partition isn't currently mounted as a separate filesystem
       ignore_errors: true 
       changed_when: false
+
+    - name: Allow Satellite service in firewalld
+      ansible.posix.firewalld:
+        service: RH-Satellite-6
+        permanent: true
+        state: enabled
+        immediate: true
  
   handlers:
 
