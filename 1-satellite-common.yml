@@ -1,7 +1,6 @@
 ---
 - name: Subscribe host and install required packages
   hosts: all
-  vars_files: vault.yml
   vars:
     repos:
       - rhel-9-for-x86_64-baseos-rpms
@@ -78,6 +77,15 @@
         regexp: '^{{ ansible_default_ipv4.address }}.*{{ inventory_hostname }}'
         line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }} {{ ansible_hostname }}"
         state: present
+
+    - name: Temporarily remount /tmp and /var/tmp with exec permissions
+      ansible.builtin.command: mount -o remount,exec {{ item }}
+      loop:
+        - /tmp
+        - /var/tmp
+      # We ignore errors in case the partition isn't currently mounted as a separate filesystem
+      ignore_errors: true 
+      changed_when: false
  
   handlers:
 
