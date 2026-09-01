@@ -1,6 +1,7 @@
 ---
 - name: Configure Red Hat Satellite Server
-  hosts: all
+  hosts: localhost
+  gather_facts: false
 
   vars:
     satellite_org: "openincite.net"
