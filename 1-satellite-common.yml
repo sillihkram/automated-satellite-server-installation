@@ -6,19 +6,19 @@
     repos:
       - rhel-9-for-x86_64-baseos-rpms
       - rhel-9-for-x86_64-appstream-rpms
-      - satellite-6.17-for-rhel-9-x86_64-rpms
-      - satellite-maintenance-6.17-for-rhel-9-x86_64-rpms
+      - satellite-6.19-for-rhel-9-x86_64-rpms
+      - satellite-maintenance-6.19-for-rhel-9-x86_64-rpms
     packages:
-      - fapolicyd
+      # - fapolicyd
       - satellite
       - rhel-system-roles
       - nfs-utils
       - vim-enhanced
       - virt-who
     ansible_remote_tmp: /dev/shm/ansible
-    fapolicyd_setup_enable_service: true
-    fapolicyd_setup_integrity: sha256
-    fapolicyd_setup_trust: rpmdb,file
+    # fapolicyd_setup_enable_service: true
+    # fapolicyd_setup_integrity: sha256
+    # fapolicyd_setup_trust: rpmdb,file
 
   tasks:
 
@@ -45,26 +45,32 @@
         name: "{{ packages }}"
         state: latest
 
-    - name: Run the fapolicyd RHEL system role
-      ansible.builtin.include_role:
-        name: redhat.rhel_system_roles.fapolicyd
+    # - name: Run the fapolicyd RHEL system role
+    #   ansible.builtin.include_role:
+    #     name: redhat.rhel_system_roles.fapolicyd
 
-    - name: Add custom fapolicyd rule for Ansible AAP execution
-      ansible.builtin.copy:
-        dest: /etc/fapolicyd/rules.d/10-ansible.rules
-        content: "allow perm=any uid=admin : dir=/home/admin/.ansible/tmp/\n"
-        owner: root
-        group: root
-        mode: '0644'
-      notify: 
-        - Compile fapolicyd rules
-        - Restart fapolicyd service
+    # - name: Add custom fapolicyd rule for Ansible AAP execution
+    #   ansible.builtin.copy:
+    #     dest: /etc/fapolicyd/rules.d/10-ansible.rules
+    #     content: "allow perm=any uid=admin : dir=/home/admin/.ansible/tmp/\n"
+    #     owner: root
+    #     group: root
+    #     mode: '0644'
+    #   notify: 
+    #     - Compile fapolicyd rules
+    #     - Restart fapolicyd service
 
-    - name: Ensure fapolicyd service is enabled and started
-      ansible.builtin.service:
+    # - name: Ensure fapolicyd service is enabled and started
+    #   ansible.builtin.service:
+    #     name: fapolicyd
+    #     state: started
+    #     enabled: true
+
+    - name: Stop and disable fapolicyd
+      ansible.builtin.systemd:
         name: fapolicyd
-        state: started
-        enabled: true
+        state: stopped
+        enabled: false
     
     - name: Add hostname to /etc/hosts
       ansible.builtin.lineinfile:
@@ -75,10 +81,10 @@
  
   handlers:
 
-    - name: Compile fapolicyd rules
-      ansible.builtin.command: fagenrules --load
+    # - name: Compile fapolicyd rules
+    #   ansible.builtin.command: fagenrules --load
 
-    - name: Restart fapolicyd service
-      ansible.builtin.service:
-        name: fapolicyd
-        state: restarted
+    # - name: Restart fapolicyd service
+    #   ansible.builtin.service:
+    #     name: fapolicyd
+    #     state: restarted
