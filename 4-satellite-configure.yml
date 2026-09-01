@@ -14,18 +14,25 @@
       block:
         - name: Create VMware compute resources
           redhat.satellite.compute_resource:
-            name: '{{ item.name }}'
+            # Satellite API Auth
+            server_url: "{{ satellite_url }}"
+            username: "{{ satellite_username }}"
+            password: "{{ satellite_password }}"
+            validate_certs: false
+            
+            # Compute Resource Settings
+            name: "{{ item.name }}"
             organizations:
               - "{{ satellite_org }}"
             locations:
               - 'Default Location'
             provider: vmware
+            user: "{{ vmware_username }}"
+            password: "{{ vmware_password }}"
+            server_url: "{{ item.url }}"  # Pass vCenter IP/Hostname
+            datacenter: "ha-datacenter"
             provider_params:
               caching_enabled: false
-              url: '{{ item.url }}'
-              user: '{{ vmware_username }}'
-              password: '{{ vmware_password }}'
-              datacenter: 'ha-datacenter'
             state: present
           loop:
             - { name: 'vhost00', url: '192.168.1.20' }
@@ -33,8 +40,12 @@
 
         - name: Enable RHEL 9 and 10 Repositories (BaseOS, AppStream, Extensions)
           redhat.satellite.repository_set:
+            server_url: "{{ satellite_url }}"
+            username: "{{ satellite_username }}"
+            password: "{{ satellite_password }}"
+            validate_certs: false
             organization: "{{ satellite_org }}"
-            label: '{{ item.label }}'
+            label: "{{ item.label }}"
             repositories:
               - releasever: "{{ item.version }}"
             state: enabled
@@ -48,6 +59,10 @@
 
         - name: Create or update weekly RHEL sync plan
           redhat.satellite.sync_plan:
+            server_url: "{{ satellite_url }}"
+            username: "{{ satellite_username }}"
+            password: "{{ satellite_password }}"
+            validate_certs: false
             name: "Weekly RHEL Sync"
             organization: "{{ satellite_org }}"
             interval: "weekly"
@@ -59,7 +74,11 @@
 
         - name: Sync RHEL 9 and 10 Repositories
           redhat.satellite.repository_sync:
-            repository: '{{ item }}'
+            server_url: "{{ satellite_url }}"
+            username: "{{ satellite_username }}"
+            password: "{{ satellite_password }}"
+            validate_certs: false
+            repository: "{{ item }}"
             product: "{{ satellite_product }}"
             organization: "{{ satellite_org }}"
           loop:
