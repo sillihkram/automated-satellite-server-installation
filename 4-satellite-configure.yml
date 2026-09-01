@@ -37,7 +37,7 @@
           loop: "{{ vcenters }}"
 
         - name: Create virt-who configurations for VMware vCenters
-          redhat.satellite.virt_who_config:
+          redhat.satellite.virt_who:
             server_url: "{{ satellite_url }}"
             username: "{{ satellite_username }}"
             password: "{{ satellite_password }}"
