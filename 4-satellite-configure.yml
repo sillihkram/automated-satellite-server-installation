@@ -1,7 +1,6 @@
 ---
 - name: Configure Red Hat Satellite Server
   hosts: all
-  gather_facts: false
 
   vars:
     satellite_org: "openincite.net"
@@ -26,7 +25,6 @@
       loop:
         - { name: 'vhost00', url: '192.168.1.20' }
         - { name: 'vhost01', url: '192.168.1.21' }
-      run_once: true
 
     - name: Enable RHEL 9 and 10 Repositories
       redhat.satellite.repository_set:
@@ -40,7 +38,6 @@
         - { label: 'rhel-9-for-x86_64-appstream-rpms', version: "9" }
         - { label: 'rhel-10-for-x86_64-baseos-rpms', version: "10" }
         - { label: 'rhel-10-for-x86_64-appstream-rpms', version: "10" }
-      run_once: true
 
     - name: Create or update weekly RHEL sync plan
       redhat.satellite.sync_plan:
@@ -52,7 +49,6 @@
         products:
           - "{{ satellite_product }}"
         state: present
-      run_once: true
 
     - name: Sync RHEL 9 and 10 Repositories
       redhat.satellite.repository_sync:
@@ -66,4 +62,3 @@
         - 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs 10'
       async: 7200
       poll: 0
-      run_once: true
