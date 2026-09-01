@@ -1,6 +1,6 @@
 ---
 - name: Configure Red Hat Satellite Server
-  hosts: localhost
+  connection: local
   gather_facts: false
 
   vars:
