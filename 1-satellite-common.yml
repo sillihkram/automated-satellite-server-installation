@@ -2,6 +2,9 @@
 - name: Subscribe host and install required packages
   hosts: all
   vars:
+    firewall:
+      - service: https
+        state: enabled
     repos:
       - rhel-9-for-x86_64-baseos-rpms
       - rhel-9-for-x86_64-appstream-rpms
@@ -19,6 +22,9 @@
     # fapolicyd_setup_integrity: sha256
     # fapolicyd_setup_trust: rpmdb,file
 
+  roles:
+    - redhat.rhel_system_roles.firewall
+  
   tasks:
 
     - name: Register to Red Hat Subscription Management Network
