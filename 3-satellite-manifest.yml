@@ -1,12 +1,28 @@
+---
+- name: Pull subscription manifest from Red Hat and import to Satellite
+  hosts: localhost
+  gather_facts: false
+  
+  vars:
+    # Your custom credential definitions (can be passed via Ansible Vault or extra vars)
+    satellite_url: "https://dschubba.openincite.net"
+    satellite_username: "admin"
+    satellite_password: ""
+    rhsm_username: "mark_hillis"
+    rhsm_password: ""
+
   roles:
     - role: redhat.satellite.manifest
       vars:
-        satellite_server_url: '{{ satellite_url }}'
-        satellite_username: '{{ satellite_username }}'
-        satellite_password: '{{ satellite_password }}'
-        satellite_organization: "openincite.net"
-        satellite_manifest_path: "~/manifest.zip"
-        satellite_manifest_download: true
-        satellite_rhsm_username: '{{ rhsm_username }}'
-        satellite_rhsm_password: '{{ rhsm_password }}'
-        satellite_manifest_uuid: "9bfbeddb-2885-4ce0-8bbe-1bc812de39d4"
+        # Core connection variables expected by the role
+        foreman_server_url: "{{ satellite_url }}"
+        foreman_username: "{{ satellite_username }}"
+        foreman_password: "{{ satellite_password }}"
+        foreman_organization: "openincite.net"
+        
+        # Manifest download variables expected by the role
+        foreman_manifest_download: true
+        foreman_manifest_uuid: "9bfbeddb-2885-4ce0-8bbe-1bc812de39d4"
+        foreman_rhsm_username: "{{ rhsm_username }}"
+        foreman_rhsm_password: "{{ rhsm_password }}"
+        foreman_manifest_path: "~/manifest.zip"
