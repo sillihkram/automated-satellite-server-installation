@@ -14,24 +14,26 @@
       block:
         - name: Create VMware compute resources
           redhat.satellite.compute_resource:
-            # Satellite API Auth
+            # Satellite API Connection (Passed directly or via AAP Credentials)
             server_url: "{{ satellite_url }}"
             username: "{{ satellite_username }}"
             password: "{{ satellite_password }}"
             validate_certs: false
             
-            # Compute Resource Settings
+            # Compute Resource Configuration
             name: "{{ item.name }}"
             organizations:
               - "{{ satellite_org }}"
             locations:
               - 'Default Location'
             provider: vmware
-            user: "{{ vmware_username }}"
-            password: "{{ vmware_password }}"
-            server_url: "{{ item.url }}"  # Pass vCenter IP/Hostname
-            datacenter: "ha-datacenter"
+            
+            # VMware Provider Parameters (All vCenter settings go here)
             provider_params:
+              url: "{{ item.url }}"
+              user: "{{ vmware_username }}"
+              password: "{{ vmware_password }}"
+              datacenter: "ha-datacenter"
               caching_enabled: false
             state: present
           loop:
@@ -67,7 +69,7 @@
             organization: "{{ satellite_org }}"
             interval: "weekly"
             enabled: true
-            sync_date: "2025-03-04 19:00:00 UTC"
+            sync_date: "2026-09-02 19:00:00 UTC"
             products:
               - "{{ satellite_product }}"
             state: present
