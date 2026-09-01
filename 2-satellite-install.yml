@@ -1,8 +1,6 @@
 ---
 - name: Install and Configure Red Hat Satellite Server
   hosts: all
-  become: true  # Required for Satellite installation
-  
   pre_tasks:
 
     # Temporarily commented out while fapolicyd is disabled.
