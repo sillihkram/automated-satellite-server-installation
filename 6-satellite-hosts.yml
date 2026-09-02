@@ -54,10 +54,12 @@
     - name: Register system using redhat_subscription module
       redhat.rhel_system_roles.redhat_subscription:
         state: present
-        rhsm_org_id: "{{ satellite_org }}"
-        rhsm_activationkey: "{{ activation_key }}"
-        rhsm_server_hostname: "{{ satellite_fqdn }}"
+        org_id: "{{ satellite_org }}"
+        activationkey: "{{ activation_key }}"
+        server_hostname: "{{ satellite_fqdn }}"
         rhsm_baseurl: "https://{{ satellite_fqdn }}/pulp/content"
+        rhsm_repo_ca_cert: "{{ katello_ca_cert }}"
+        force_register: false
 
     # -------------------------------------------------------------------------
     # Step 3: Install All Software Packages (Now that RHSM is active)
