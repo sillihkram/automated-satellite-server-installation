@@ -14,6 +14,9 @@
     # AI / LightSpeed & MCP Endpoints
     lightspeed_url: "https://dschubba.openincite.net/api/v2/lightspeed"
     satellite_mcp_url: "https://dschubba.openincite.net/api/v2/mcp"
+    
+    # Satellite Personal Access Token (Pass via CLI: -e "satellite_token=YOUR_PAT")
+    satellite_token: ""
 
   tasks:
     # -------------------------------------------------------------------------
@@ -154,7 +157,7 @@
         dest: /etc/goose-redhat/config.yaml
         owner: root
         group: root
-        mode: '0644'
+        mode: '0600'  # Restricted permissions due to embedded API token
         content: |
           GOOSE_PROVIDER: "lightspeed"
           LIGHTSPEED_URL: "{{ lightspeed_url }}"
@@ -164,5 +167,7 @@
               name: "satellite_mcp"
               type: "sse"
               uri: "{{ satellite_mcp_url }}"
+              headers:
+                Authorization: "Bearer {{ satellite_token }}"
               envs:
                 NODE_TLS_REJECT_UNAUTHORIZED: "0"
