@@ -1,0 +1,74 @@
+---
+- name: Configure Satellite Content Views and Activation Keys
+  hosts: localhost
+  gather_facts: false
+  run_once: true
+
+  vars:
+    satellite_org: "openincite.net"
+    satellite_product: "Red Hat Enterprise Linux for x86_64"
+    
+    # SOE Naming Convention
+    lifecycle_env_name: "Development"
+    content_view_name: "RHEL-SOE"
+    activation_key_name: "rhel-soe-dev"
+
+  tasks:
+    - name: Create Lifecycle Environment
+      redhat.satellite.lifecycle_environment:
+        server_url: "{{ satellite_url }}"
+        username: "{{ satellite_username }}"
+        password: "{{ satellite_password }}"
+        validate_certs: false
+        organization: "{{ satellite_org }}"
+        name: "{{ lifecycle_env_name }}"
+        prior: "Library"
+        state: present
+
+    - name: Create Content View
+      redhat.satellite.content_view:
+        server_url: "{{ satellite_url }}"
+        username: "{{ satellite_username }}"
+        password: "{{ satellite_password }}"
+        validate_certs: false
+        organization: "{{ satellite_org }}"
+        name: "{{ content_view_name }}"
+        repositories:
+          - name: 'Red Hat Enterprise Linux 9 for x86_64 - BaseOS RPMs 9'
+            product: "{{ satellite_product }}"
+          - name: 'Red Hat Enterprise Linux 9 for x86_64 - AppStream RPMs 9'
+            product: "{{ satellite_product }}"
+          - name: 'Red Hat Enterprise Linux 9 for x86_64 - Extensions RPMs 9'
+            product: "{{ satellite_product }}"
+          - name: 'Red Hat Enterprise Linux 10 for x86_64 - BaseOS RPMs'
+            product: "{{ satellite_product }}"
+          - name: 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs'
+            product: "{{ satellite_product }}"
+          - name: 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs'
+            product: "{{ satellite_product }}"
+        state: present
+
+    - name: Publish and Promote Content View
+      redhat.satellite.content_view_version:
+        server_url: "{{ satellite_url }}"
+        username: "{{ satellite_username }}"
+        password: "{{ satellite_password }}"
+        validate_certs: false
+        organization: "{{ satellite_org }}"
+        content_view: "{{ content_view_name }}"
+        lifecycle_environments:
+          - "{{ lifecycle_env_name }}"
+        state: present
+
+    - name: Create Activation Key
+      redhat.satellite.activation_key:
+        server_url: "{{ satellite_url }}"
+        username: "{{ satellite_username }}"
+        password: "{{ satellite_password }}"
+        validate_certs: false
+        organization: "{{ satellite_org }}"
+        name: "{{ activation_key_name }}"
+        lifecycle_environment: "{{ lifecycle_env_name }}"
+        content_view: "{{ content_view_name }}"
+        auto_attach: true
+        state: present
