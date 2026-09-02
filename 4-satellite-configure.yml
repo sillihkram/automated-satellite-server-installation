@@ -45,9 +45,10 @@
             force_basic_auth: true
             body_format: json
             body:
-              organization_id: 1  # Use numeric ID (or "{{ satellite_org_id }}")
               foreman_virt_who_configure_config:
                 name: "virt-who-{{ item.name }}"
+                organization_id: 1  # Moved inside the config wrapper
+                satellite_url: "{{ satellite_url }}"  # Required by the plugin schema
                 hypervisor_type: "esx"
                 hypervisor_server: "{{ item.url }}"
                 hypervisor_username: "{{ vmware_username }}"
