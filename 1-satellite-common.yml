@@ -3,6 +3,10 @@
   hosts: all
   vars:
     firewall:
+      - service: https
+        state: enabled
+      - service: http
+        state: enabled
       - service: RH-Satellite-6
         state: enabled
     repos:
@@ -11,28 +15,23 @@
       - satellite-6.19-for-rhel-9-x86_64-rpms
       - satellite-maintenance-6.19-for-rhel-9-x86_64-rpms
     packages:
-      # - fapolicyd
       - satellite
       - rhel-system-roles
       - nfs-utils
       - vim-enhanced
       - virt-who
     ansible_remote_tmp: /dev/shm/ansible
-    # fapolicyd_setup_enable_service: true
-    # fapolicyd_setup_integrity: sha256
-    # fapolicyd_setup_trust: rpmdb,file
 
   roles:
-    - redhat.rhel_system_roles.firewall
-  
-  tasks:
+    - role: redhat.rhel_system_roles.firewall
 
+  tasks:
     - name: Register to Red Hat Subscription Management Network
       redhat.rhel_system_roles.redhat_subscription:
         state: present
         username: "{{ rhsm_username }}"
         password: "{{ rhsm_password }}"
-        release: 9.7
+        release: "9.7"
         auto_attach: true
 
     - name: Disable all RHSM repositories
@@ -48,35 +47,8 @@
     - name: Install required packages
       ansible.builtin.dnf:
         name: "{{ packages }}"
-        state: latest
+        state: present
 
-    # - name: Run the fapolicyd RHEL system role
-    #   ansible.builtin.include_role:
-    #     name: redhat.rhel_system_roles.fapolicyd
-
-    # - name: Add custom fapolicyd rule for Ansible AAP execution
-    #   ansible.builtin.copy:
-    #     dest: /etc/fapolicyd/rules.d/10-ansible.rules
-    #     content: "allow perm=any uid=admin : dir=/home/admin/.ansible/tmp/\n"
-    #     owner: root
-    #     group: root
-    #     mode: '0644'
-    #   notify: 
-    #     - Compile fapolicyd rules
-    #     - Restart fapolicyd service
-
-    # - name: Ensure fapolicyd service is enabled and started
-    #   ansible.builtin.service:
-    #     name: fapolicyd
-    #     state: started
-    #     enabled: true
-
-    # - name: Stop and disable fapolicyd
-    #   ansible.builtin.systemd:
-    #     name: fapolicyd
-    #     state: stopped
-    #     enabled: false
-    
     - name: Add hostname to /etc/hosts
       ansible.builtin.lineinfile:
         path: /etc/hosts
@@ -89,23 +61,5 @@
       loop:
         - /tmp
         - /var/tmp
-      # We ignore errors in case the partition isn't currently mounted as a separate filesystem
-      ignore_errors: true 
+      ignore_errors: true
       changed_when: false
-
-#    - name: Allow Satellite service in firewalld
-#      ansible.posix.firewalld:
-#        service: RH-Satellite-6
-#        permanent: true
-#        state: enabled
-#        immediate: true
- 
-  handlers:
-
-    # - name: Compile fapolicyd rules
-    #   ansible.builtin.command: fagenrules --load
-
-    # - name: Restart fapolicyd service
-    #   ansible.builtin.service:
-    #     name: fapolicyd
-    #     state: restarted
