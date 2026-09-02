@@ -70,24 +70,26 @@
             validate_certs: false
             organization: "{{ satellite_org }}"
             label: "{{ item.label }}"
-            # Maps the loop's repos array cleanly depending on the definition below
-            repositories: "{{ item.repos | default(omit) }}" 
+            # Provide repositories only if repos is defined, else omit
+            repositories: "{{ item.repos | default(omit) }}"
+            # Provide all_repositories: true only if repos is NOT defined, else omit
+            all_repositories: "{{ true if item.repos is not defined else omit }}"
             state: enabled
           loop:
             # RHEL 9
             - { label: 'rhel-9-for-x86_64-baseos-rpms', repos: [{ releasever: "9" }] }
             - { label: 'rhel-9-for-x86_64-appstream-rpms', repos: [{ releasever: "9" }] }
             - { label: 'rhel-9-for-x86_64-extensions-rpms', repos: [{ releasever: "9" }] }
-            # Satellite Client 9 does not accept releasever filtering
+            # Satellite Client 9 (Requires all_repositories: true)
             - { label: 'satellite-client-6-for-rhel-9-x86_64-rpms' } 
             
             # RHEL 10
-            - { label: 'rhel-10-for-x86_64-baseos-rpms', repos: [{ releasever: "10" }] }
+            - { x-label: 'rhel-10-for-x86_64-baseos-rpms', repos: [{ releasever: "10" }] }
             - { label: 'rhel-10-for-x86_64-appstream-rpms', repos: [{ releasever: "10" }] }
             - { label: 'rhel-10-for-x86_64-extensions-rpms', repos: [{ releasever: "10" }] }
-            # Satellite Client 10 does not accept releasever filtering
+            # Satellite Client 10 (Requires all_repositories: true)
             - { label: 'satellite-client-6-for-rhel-10-x86_64-rpms' }
-
+            
         - name: Create or update weekly RHEL sync plan
           redhat.satellite.sync_plan:
             server_url: "{{ satellite_url }}"
