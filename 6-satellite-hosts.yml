@@ -97,18 +97,21 @@
       ignore_errors: true
 
     # -------------------------------------------------------------------------
-    # Step 5: Configure & Execute Insights Client
+    # Step 5: Configure & Execute Insights Client (Native lineinfile)
     # -------------------------------------------------------------------------
-    - name: Pre-configure Insights client for Satellite proxy & trust
-      ansible.builtin.ini_file:
+    - name: Ensure insights-client.conf has Satellite CA verification
+      ansible.builtin.lineinfile:
         path: /etc/insights-client/insights-client.conf
-        section: insights-client
-        option: "{{ item.option }}"
-        value: "{{ item.value }}"
-        mode: '0644'
-      loop:
-        - { option: 'cert_verify', value: "{{ katello_ca_cert }}" }
-        - { option: 'base_url', value: "https://{{ satellite_fqdn }}/redhat_access/r/insights" }
+        regexp: '^#?cert_verify='
+        line: "cert_verify={{ katello_ca_cert }}"
+        state: present
+
+    - name: Ensure insights-client.conf points to Satellite proxy endpoint
+      ansible.builtin.lineinfile:
+        path: /etc/insights-client/insights-client.conf
+        regexp: '^#?base_url='
+        line: "base_url=https://{{ satellite_fqdn }}/redhat_access/r/insights"
+        state: present
 
     - name: Execute Red Hat Insights Client Role
       ansible.builtin.include_role:
