@@ -64,7 +64,7 @@
     # -------------------------------------------------------------------------
     - name: Execute Red Hat Subscription System Role
       ansible.builtin.include_role:
-        name: redhat.rhel_system_roles.redhat_subscription
+        name: redhat.rhel_system_roles.subscription
 
     # -------------------------------------------------------------------------
     # Step 3: Install All Software Packages (Now that RHSM is active)
