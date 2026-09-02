@@ -53,20 +53,18 @@
         rhsm_repo_ca_cert: "{{ katello_ca_cert }}"
 
     # -------------------------------------------------------------------------
-    # Step 2: Install REX, Insights, and AI Packages
+    # Step 2: Install Insights and AI Packages
     # -------------------------------------------------------------------------
-    - name: Install REX, Insights, and AI packages
+    - name: Install Insights and AI packages
       ansible.builtin.dnf:
         name:
           - insights-client
           - command-line-assistant
           - goose-redhat
-          - yggdrasil
-          - foreman_yggdrasil
         state: present
 
     # -------------------------------------------------------------------------
-    # Step 3: Configure Remote Execution (Push & Pull)
+    # Step 3: Configure Push Remote Execution (SSH Key)
     # -------------------------------------------------------------------------
     - name: Fetch Satellite SSH Public Key
       ansible.builtin.set_fact:
@@ -81,14 +79,7 @@
         - rex_pub_key is defined
         - rex_pub_key | length > 0
 
-    - name: Ensure Yggdrasil service is running for Pull REX
-      ansible.builtin.systemd:
-        name: yggdrasild
-        state: started
-        enabled: true
-      ignore_errors: true
-
-# -------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Step 4: Configure & Register Insights Client (Deterministic INI method)
     # -------------------------------------------------------------------------
     - name: Configure Insights Client for Satellite proxy
