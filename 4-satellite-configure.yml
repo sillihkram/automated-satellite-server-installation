@@ -62,7 +62,7 @@
             validate_certs: false
           loop: "{{ vcenters }}"
 
-        - name: Enable RHEL 9 and 10 Repositories (BaseOS, AppStream, Extensions)
+        - name: Enable RHEL and Satellite Client Repositories
           redhat.satellite.repository_set:
             server_url: "{{ satellite_url }}"
             username: "{{ satellite_username }}"
@@ -77,9 +77,11 @@
             - { label: 'rhel-9-for-x86_64-baseos-rpms', version: "9" }
             - { label: 'rhel-9-for-x86_64-appstream-rpms', version: "9" }
             - { label: 'rhel-9-for-x86_64-extensions-rpms', version: "9" }
+            - { label: 'satellite-client-6-for-rhel-9-x86_64-rpms', version: "9" }
             - { label: 'rhel-10-for-x86_64-baseos-rpms', version: "10" }
             - { label: 'rhel-10-for-x86_64-appstream-rpms', version: "10" }
             - { label: 'rhel-10-for-x86_64-extensions-rpms', version: "10" }
+            - { label: 'satellite-client-6-for-rhel-10-x86_64-rpms', version: "10" }
 
         - name: Create or update weekly RHEL sync plan
           redhat.satellite.sync_plan:
@@ -96,7 +98,7 @@
               - "{{ satellite_product }}"
             state: present
 
-        - name: Sync RHEL 9 and 10 Repositories
+        - name: Sync RHEL and Satellite Client Repositories
           redhat.satellite.repository_sync:
             server_url: "{{ satellite_url }}"
             username: "{{ satellite_username }}"
@@ -109,9 +111,11 @@
             - 'Red Hat Enterprise Linux 9 for x86_64 - BaseOS RPMs 9'
             - 'Red Hat Enterprise Linux 9 for x86_64 - AppStream RPMs 9'
             - 'Red Hat Enterprise Linux 9 for x86_64 - Extensions RPMs 9'
+            - 'Red Hat Satellite Client 6 for RHEL 9 x86_64 RPMs 9'
             - 'Red Hat Enterprise Linux 10 for x86_64 - BaseOS RPMs 10'
             - 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs 10'
             - 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs 10'
+            - 'Red Hat Satellite Client 6 for RHEL 10 x86_64 RPMs 10'
           async: 7200
           poll: 0
 
