@@ -41,11 +41,15 @@
             product: "{{ satellite_product }}"
           - name: 'Red Hat Enterprise Linux 9 for x86_64 - Extensions RPMs 9'
             product: "{{ satellite_product }}"
+          - name: 'Red Hat Satellite Client 6 for RHEL 9 x86_64 RPMs 9'
+            product: "{{ satellite_product }}"
           - name: 'Red Hat Enterprise Linux 10 for x86_64 - BaseOS RPMs 10'
             product: "{{ satellite_product }}"
           - name: 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs 10'
             product: "{{ satellite_product }}"
           - name: 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs 10'
+            product: "{{ satellite_product }}"
+          - name: 'Red Hat Satellite Client 6 for RHEL 10 x86_64 RPMs 10'
             product: "{{ satellite_product }}"
         state: present
 
@@ -61,7 +65,7 @@
           - "{{ lifecycle_environment }}"
         state: present
 
-    - name: Create Activation Key with Extensions Repository Enabled
+    - name: Create Activation Key with Extensions and Client Repositories Enabled
       redhat.satellite.activation_key:
         server_url: "{{ satellite_url }}"
         username: "{{ satellite_username }}"
@@ -74,7 +78,10 @@
         content_overrides:
           - label: "rhel-9-for-x86_64-extensions-rpms"
             override: "enabled"
+          - label: "satellite-client-6-for-rhel-9-x86_64-rpms"
+            override: "enabled"
           - label: "rhel-10-for-x86_64-extensions-rpms"
             override: "enabled"
-        state: present
+          - label: "satellite-client-6-for-rhel-10-x86_64-rpms"
+            override: "enabled"
         state: present
