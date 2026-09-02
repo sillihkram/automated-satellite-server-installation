@@ -3,7 +3,7 @@
   hosts: all
   vars:
     firewall:
-      - service: https
+      - service: RH-Satellite-6
         state: enabled
     repos:
       - rhel-9-for-x86_64-baseos-rpms
