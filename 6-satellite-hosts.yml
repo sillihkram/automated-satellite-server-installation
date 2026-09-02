@@ -88,18 +88,19 @@
         enabled: true
       ignore_errors: true
 
-    # -------------------------------------------------------------------------
-    # Step 4: Configure & Register Insights Client
+# -------------------------------------------------------------------------
+    # Step 4: Configure & Register Insights Client (Deterministic INI method)
     # -------------------------------------------------------------------------
     - name: Configure Insights Client for Satellite proxy
-      ansible.builtin.lineinfile:
+      community.general.ini_file:
         path: /etc/insights-client/insights-client.conf
-        regexp: "{{ item.regexp }}"
-        line: "{{ item.line }}"
-        state: present
+        section: insights-client
+        option: "{{ item.option }}"
+        value: "{{ item.value }}"
+        mode: '0644'
       loop:
-        - { regexp: '^#?cert_verify=', line: "cert_verify={{ katello_ca_cert }}" }
-        - { regexp: '^#?base_url=', line: "base_url=https://{{ satellite_fqdn }}/redhat_access/r/insights" }
+        - { option: 'cert_verify', value: "{{ katello_ca_cert }}" }
+        - { option: 'base_url', value: "https://{{ satellite_fqdn }}/redhat_access/r/insights" }
 
     - name: Register host with Red Hat Insights
       ansible.builtin.command:
