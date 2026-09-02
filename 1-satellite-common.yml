@@ -1,153 +1,111 @@
 ---
-- name: Onboard RHEL Hosts to Satellite, REX, Insights, and AI Services
+- name: Subscribe host and install required packages
   hosts: all
-  remote_user: admin
-  become: true
-  gather_facts: true
-
   vars:
-    satellite_fqdn: "dschubba.openincite.net"
-    satellite_org: "openincite.net"
-    activation_key: "rhel-soe-dev"
-    katello_ca_cert: "/etc/rhsm/ca/katello-server-ca.pem"
-    
-    # Red Hat Subscription System Role Variables
-    rhsm_org_id: "{{ satellite_org }}"
-    rhsm_activationkey: "{{ activation_key }}"
-    rhsm_server_hostname: "{{ satellite_fqdn }}"
-    rhsm_baseurl: "https://{{ satellite_fqdn }}/pulp/content"
-    
-    # Insights Role Configuration
-    insights_display_name: "{{ ansible_fqdn }}"
-    redhat_portal_username: ""
-    insights_client_auto_config: true
-    
-    # AI / LightSpeed & MCP Endpoint Configurations
-    lightspeed_url: "https://dschubba.openincite.net/api/v2/lightspeed"
-    satellite_mcp_url: "https://dschubba.openincite.net/api/v2/mcp"
+    firewall:
+      - service: https
+        state: enabled
+    repos:
+      - rhel-9-for-x86_64-baseos-rpms
+      - rhel-9-for-x86_64-appstream-rpms
+      - satellite-6.19-for-rhel-9-x86_64-rpms
+      - satellite-maintenance-6.19-for-rhel-9-x86_64-rpms
+    packages:
+      # - fapolicyd
+      - satellite
+      - rhel-system-roles
+      - nfs-utils
+      - vim-enhanced
+      - virt-who
+    ansible_remote_tmp: /dev/shm/ansible
+    # fapolicyd_setup_enable_service: true
+    # fapolicyd_setup_integrity: sha256
+    # fapolicyd_setup_trust: rpmdb,file
 
+  roles:
+    - redhat.rhel_system_roles.firewall
+  
   tasks:
-    # -------------------------------------------------------------------------
-    # Step 1: Establish Certificate Trust
-    # -------------------------------------------------------------------------
-    - name: Download Katello CA Consumer RPM bypassing SSL check
-      ansible.builtin.get_url:
-        url: "https://{{ satellite_fqdn }}/pub/katello-ca-consumer-latest.noarch.rpm"
-        dest: "/tmp/katello-ca-consumer-latest.noarch.rpm"
-        validate_certs: false
-        mode: '0644'
 
-    - name: Install Katello CA Consumer RPM from local file
+    - name: Register to Red Hat Subscription Management Network
+      redhat.rhel_system_roles.redhat_subscription:
+        state: present
+        username: "{{ rhsm_username }}"
+        password: "{{ rhsm_password }}"
+        release: 9.7
+        auto_attach: true
+
+    - name: Disable all RHSM repositories
+      redhat.rhel_system_roles.rhsm_repository:
+        name: '*'
+        state: disabled
+
+    - name: Enable required RHSM Repositories
+      redhat.rhel_system_roles.rhsm_repository:
+        name: "{{ repos }}"
+        state: enabled
+
+    - name: Install required packages
       ansible.builtin.dnf:
-        name: "/tmp/katello-ca-consumer-latest.noarch.rpm"
+        name: "{{ packages }}"
+        state: latest
+
+    # - name: Run the fapolicyd RHEL system role
+    #   ansible.builtin.include_role:
+    #     name: redhat.rhel_system_roles.fapolicyd
+
+    # - name: Add custom fapolicyd rule for Ansible AAP execution
+    #   ansible.builtin.copy:
+    #     dest: /etc/fapolicyd/rules.d/10-ansible.rules
+    #     content: "allow perm=any uid=admin : dir=/home/admin/.ansible/tmp/\n"
+    #     owner: root
+    #     group: root
+    #     mode: '0644'
+    #   notify: 
+    #     - Compile fapolicyd rules
+    #     - Restart fapolicyd service
+
+    # - name: Ensure fapolicyd service is enabled and started
+    #   ansible.builtin.service:
+    #     name: fapolicyd
+    #     state: started
+    #     enabled: true
+
+    # - name: Stop and disable fapolicyd
+    #   ansible.builtin.systemd:
+    #     name: fapolicyd
+    #     state: stopped
+    #     enabled: false
+    
+    - name: Add hostname to /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^{{ ansible_default_ipv4.address }}.*{{ inventory_hostname }}'
+        line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }} {{ ansible_hostname }}"
         state: present
-        disable_gpg_check: true
 
-    - name: Remove temporary RPM file
-      ansible.builtin.file:
-        path: "/tmp/katello-ca-consumer-latest.noarch.rpm"
-        state: absent
-
-    - name: Copy Katello CA to system-wide trust anchors
-      ansible.builtin.copy:
-        src: "{{ katello_ca_cert }}"
-        dest: /etc/pki/ca-trust/source/anchors/katello-server-ca.pem
-        remote_src: true
-        mode: '0644'
-      notify: Update CA Trust
-
-    - name: Force immediate update of system trust store
-      ansible.builtin.meta: flush_handlers
-
-    # -------------------------------------------------------------------------
-    # Step 2: Register via Official RHEL System Role
-    # -------------------------------------------------------------------------
-    - name: Execute Red Hat Subscription System Role
-      ansible.builtin.include_role:
-        name: redhat.rhel_system_roles.redhat_subscription
-
-    # -------------------------------------------------------------------------
-    # Step 3: Install All Software Packages (Now that RHSM is active)
-    # -------------------------------------------------------------------------
-    - name: Install REX, Insights, and AI Packages
-      ansible.builtin.dnf:
-        name:
-          - insights-client
-          - command-line-assistant
-          - goose-redhat
-          - yggdrasil
-          - foreman_yggdrasil
-        state: present
-      ignore_errors: true
-
-    # -------------------------------------------------------------------------
-    # Step 4: Configure Remote Execution (Push & Pull)
-    # -------------------------------------------------------------------------
-    - name: Deploy Satellite SSH Public Key for Push REX
-      ansible.posix.authorized_key:
-        user: root
-        state: present
-        key: "{{ lookup('url', 'https://' + satellite_fqdn + '/pub/remote_execution_ssh_keys.pub', validate_certs=false) }}"
-
-    - name: Ensure Yggdrasil daemon is active for Pull REX
-      ansible.builtin.systemd:
-        name: yggdrasild
-        state: started
-        enabled: true
-      ignore_errors: true
-
-    # -------------------------------------------------------------------------
-    # Step 5: Configure & Execute Insights Client
-    # -------------------------------------------------------------------------
-    - name: Pre-configure Insights client for Satellite proxy & trust
-      ansible.builtin.ini_file:
-        path: /etc/insights-client/insights-client.conf
-        section: insights-client
-        option: "{{ item.option }}"
-        value: "{{ item.value }}"
-        mode: '0644'
+    - name: Temporarily remount /tmp and /var/tmp with exec permissions
+      ansible.builtin.command: mount -o remount,exec {{ item }}
       loop:
-        - { option: 'cert_verify', value: "{{ katello_ca_cert }}" }
-        - { option: 'base_url', value: "https://{{ satellite_fqdn }}/redhat_access/r/insights" }
+        - /tmp
+        - /var/tmp
+      # We ignore errors in case the partition isn't currently mounted as a separate filesystem
+      ignore_errors: true 
+      changed_when: false
 
-    - name: Execute Red Hat Insights Client Role
-      ansible.builtin.include_role:
-        name: redhat.insights.insights_client
-
-    # -------------------------------------------------------------------------
-    # Step 6: Configure AI Tools (Command-Line Assistant & Goose)
-    # -------------------------------------------------------------------------
-    - name: Configure Command-Line Assistant
-      ansible.builtin.copy:
-        dest: /etc/command-line-assistant/config.toml
-        owner: root
-        group: root
-        mode: '0644'
-        content: |
-          [provider]
-          type = "lightspeed"
-          url = "{{ lightspeed_url }}"
-          tls_skip_verify = true
-          ca_cert = "{{ katello_ca_cert }}"
-
-    - name: Configure Goose System-Wide Profile for Satellite MCP
-      ansible.builtin.copy:
-        dest: /etc/goose/config.yaml
-        owner: root
-        group: root
-        mode: '0644'
-        content: |
-          GOOSE_PROVIDER: "lightspeed"
-          LIGHTSPEED_URL: "{{ lightspeed_url }}"
-          SSL_VERIFY: false
-          extensions:
-            satellite_mcp:
-              type: "mcp"
-              enabled: true
-              uri: "{{ satellite_mcp_url }}"
-              dangerously_allow_insecure: true
-
+#    - name: Allow Satellite service in firewalld
+#      ansible.posix.firewalld:
+#        service: RH-Satellite-6
+#        permanent: true
+#        state: enabled
+#        immediate: true
+ 
   handlers:
-    - name: Update CA Trust
-      ansible.builtin.command:
-        cmd: update-ca-trust
+
+    # - name: Compile fapolicyd rules
+    #   ansible.builtin.command: fagenrules --load
+
+    # - name: Restart fapolicyd service
+    #   ansible.builtin.service:
+    #     name: fapolicyd
+    #     state: restarted
