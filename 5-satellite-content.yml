@@ -61,7 +61,7 @@
           - "{{ lifecycle_environment }}"
         state: present
 
-      - name: Create Activation Key with Extensions Repository Enabled
+    - name: Create Activation Key with Extensions Repository Enabled
       redhat.satellite.activation_key:
         server_url: "{{ satellite_url }}"
         username: "{{ satellite_username }}"
