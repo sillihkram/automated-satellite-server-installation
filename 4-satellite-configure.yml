@@ -114,26 +114,31 @@
           async: 7200
           poll: 0
 
-    - name: Fetch and Deploy Virt-Who Configurations on Satellite Host
-      remote_user: admin
-      become: true
-      block:
-        - name: Fetch existing virt-who configurations from Satellite API
+        - name: Deploy Virt-Who Configurations via Satellite Engine
+          remote_user: admin
+          become: true
+          block:
+            - name: Fetch existing virt-who configurations from Satellite API
+              ansible.builtin.uri:
+                url: "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs"
+                user: "{{ satellite_username }}"
+                password: "{{ satellite_password }}"
+                method: GET
+                force_basic_auth: true
+                validate_certs: false
+              register: existing_virt_who_configs
+              delegate_to: localhost
+
+        - name: Trigger virt-who configuration deployment
           ansible.builtin.uri:
-            url: "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs"
+            url: "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs/{{ item.id }}/deploy"
             user: "{{ satellite_username }}"
             password: "{{ satellite_password }}"
-            method: GET
+            method: POST
             force_basic_auth: true
+            body_format: json
+            status_code: [200, 201, 202]
             validate_certs: false
-          register: existing_virt_who_configs
-          delegate_to: localhost
-
-        - name: Deploy virt-who script directly on Satellite host
-          ansible.builtin.shell: |
-            curl -s -k -u "{{ satellite_username }}:{{ satellite_password }}" \
-              "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs/{{ item.id }}/script" | bash
           loop: "{{ existing_virt_who_configs.json.results }}"
           when: item.name in ['virt-who-vhost00', 'virt-who-vhost01']
-          args:
-            creates: "/etc/virt-who.d/virt-who-config-{{ item.id }}.conf"
+          delegate_to: localhost
