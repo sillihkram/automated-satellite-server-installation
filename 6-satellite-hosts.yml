@@ -11,17 +11,6 @@
     activation_key: "rhel-soe-dev"
     katello_ca_cert: "/etc/rhsm/ca/katello-server-ca.pem"
     
-    # Red Hat Subscription System Role Variables
-    rhsm_org_id: "{{ satellite_org }}"
-    rhsm_activationkey: "{{ activation_key }}"
-    rhsm_server_hostname: "{{ satellite_fqdn }}"
-    rhsm_baseurl: "https://{{ satellite_fqdn }}/pulp/content"
-    
-    # Insights Role Configuration
-    insights_display_name: "{{ ansible_fqdn }}"
-    redhat_portal_username: ""
-    insights_client_auto_config: true
-    
     # AI / LightSpeed & MCP Endpoint Configurations
     lightspeed_url: "https://dschubba.openincite.net/api/v2/lightspeed"
     satellite_mcp_url: "https://dschubba.openincite.net/api/v2/mcp"
@@ -60,11 +49,15 @@
       ansible.builtin.meta: flush_handlers
 
     # -------------------------------------------------------------------------
-    # Step 2: Register via Official RHEL System Role
+    # Step 2: Register via redhat_subscription System Role Module
     # -------------------------------------------------------------------------
-    - name: Execute Red Hat Subscription System Role
-      ansible.builtin.include_role:
-        name: redhat.rhel_system_roles.subscription
+    - name: Register system using redhat_subscription module
+      redhat.rhel_system_roles.redhat_subscription:
+        state: present
+        rhsm_org_id: "{{ satellite_org }}"
+        rhsm_activationkey: "{{ activation_key }}"
+        rhsm_server_hostname: "{{ satellite_fqdn }}"
+        rhsm_baseurl: "https://{{ satellite_fqdn }}/pulp/content"
 
     # -------------------------------------------------------------------------
     # Step 3: Install All Software Packages (Now that RHSM is active)
@@ -97,7 +90,7 @@
       ignore_errors: true
 
     # -------------------------------------------------------------------------
-    # Step 5: Configure & Execute Insights Client (Native lineinfile)
+    # Step 5: Configure & Execute Insights Client
     # -------------------------------------------------------------------------
     - name: Ensure insights-client.conf has Satellite CA verification
       ansible.builtin.lineinfile:
@@ -113,9 +106,12 @@
         line: "base_url=https://{{ satellite_fqdn }}/redhat_access/r/insights"
         state: present
 
-    - name: Execute Red Hat Insights Client Role
-      ansible.builtin.include_role:
-        name: redhat.insights.insights_client
+    - name: Register host with Red Hat Insights
+      ansible.builtin.command:
+        cmd: insights-client --register
+      register: insights_reg
+      changed_when: "'Successfully registered' in insights_reg.stdout or insights_reg.rc == 0"
+      failed_when: false
 
     # -------------------------------------------------------------------------
     # Step 6: Configure AI Tools (Command-Line Assistant & Goose)
