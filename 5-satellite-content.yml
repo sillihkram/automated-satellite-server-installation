@@ -41,7 +41,7 @@
             product: "{{ satellite_product }}"
           - name: 'Red Hat Enterprise Linux 9 for x86_64 - Extensions RPMs 9'
             product: "{{ satellite_product }}"
-          - name: 'Red Hat Satellite Client 6 for RHEL 9 x86_64 (RPMs)'
+          - name: 'Red Hat Satellite Client 6 for RHEL 9 x86_64 RPMs'
             product: "{{ satellite_product }}"
           - name: 'Red Hat Enterprise Linux 10 for x86_64 - BaseOS RPMs 10'
             product: "{{ satellite_product }}"
@@ -49,7 +49,7 @@
             product: "{{ satellite_product }}"
           - name: 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs 10'
             product: "{{ satellite_product }}"
-          - name: 'Red Hat Satellite Client 6 for RHEL 10 x86_64 (RPMs)'
+          - name: 'Red Hat Satellite Client 6 for RHEL 10 x86_64 RPMs'
             product: "{{ satellite_product }}"
         state: present
 
