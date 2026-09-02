@@ -113,3 +113,26 @@
             - 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs'
           async: 7200
           poll: 0
+
+    - name: Fetch and Deploy Virt-Who Configurations
+      delegate_to: "{{ inventory_hostname }}"
+      block:
+        - name: Fetch existing virt-who configurations from Satellite API
+          ansible.builtin.uri:
+            url: "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs"
+            user: "{{ satellite_username }}"
+            password: "{{ satellite_password }}"
+            method: GET
+            force_basic_auth: true
+            validate_certs: false
+          register: existing_virt_who_configs
+          delegate_to: localhost
+
+        - name: Deploy virt-who script on Satellite host
+          ansible.builtin.shell: |
+            curl -s -k -u "{{ satellite_username }}:{{ satellite_password }}" \
+              "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs/{{ item.id }}/script" | bash
+          loop: "{{ existing_virt_who_configs.json.results }}"
+          when: item.name in ['virt-who-vhost00', 'virt-who-vhost01']
+          args:
+            creates: "/etc/virt-who.d/virt-who-config-{{ item.id }}.conf"
