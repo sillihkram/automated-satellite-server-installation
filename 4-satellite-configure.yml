@@ -58,7 +58,7 @@
                 interval: "60"
                 hypervisor_id: "hostname"
                 filtering_mode: "none"
-            status_code: [200, 201, 422]
+            status_code: [200, 201, 422]  # Fixed: Restored status codes
             validate_certs: false
           loop: "{{ vcenters }}"
 
@@ -70,18 +70,23 @@
             validate_certs: false
             organization: "{{ satellite_org }}"
             label: "{{ item.label }}"
-            repositories:
-              - releasever: "{{ item.version }}"
+            # Maps the loop's repos array cleanly depending on the definition below
+            repositories: "{{ item.repos | default(omit) }}" 
             state: enabled
           loop:
-            - { label: 'rhel-9-for-x86_64-baseos-rpms', version: "9" }
-            - { label: 'rhel-9-for-x86_64-appstream-rpms', version: "9" }
-            - { label: 'rhel-9-for-x86_64-extensions-rpms', version: "9" }
-            - { label: 'satellite-client-6-for-rhel-9-x86_64-rpms', version: "9" }
-            - { label: 'rhel-10-for-x86_64-baseos-rpms', version: "10" }
-            - { label: 'rhel-10-for-x86_64-appstream-rpms', version: "10" }
-            - { label: 'rhel-10-for-x86_64-extensions-rpms', version: "10" }
-            - { label: 'satellite-client-6-for-rhel-10-x86_64-rpms', version: "10" }
+            # RHEL 9
+            - { label: 'rhel-9-for-x86_64-baseos-rpms', repos: [{ releasever: "9" }] }
+            - { label: 'rhel-9-for-x86_64-appstream-rpms', repos: [{ releasever: "9" }] }
+            - { label: 'rhel-9-for-x86_64-extensions-rpms', repos: [{ releasever: "9" }] }
+            # Satellite Client 9 does not accept releasever filtering
+            - { label: 'satellite-client-6-for-rhel-9-x86_64-rpms' } 
+            
+            # RHEL 10
+            - { label: 'rhel-10-for-x86_64-baseos-rpms', repos: [{ releasever: "10" }] }
+            - { label: 'rhel-10-for-x86_64-appstream-rpms', repos: [{ releasever: "10" }] }
+            - { label: 'rhel-10-for-x86_64-extensions-rpms', repos: [{ releasever: "10" }] }
+            # Satellite Client 10 does not accept releasever filtering
+            - { label: 'satellite-client-6-for-rhel-10-x86_64-rpms' }
 
         - name: Create or update weekly RHEL sync plan
           redhat.satellite.sync_plan:
