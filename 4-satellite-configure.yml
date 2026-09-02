@@ -12,7 +12,7 @@
       - { name: 'vhost01', url: '192.168.1.21' }
 
   tasks:
-    - name: Configure Satellite Server Resources and Repositories
+    - name: Configure Satellite Server API Resources and Repositories
       delegate_to: localhost
       run_once: true
       block:
@@ -114,8 +114,9 @@
           async: 7200
           poll: 0
 
-    - name: Fetch and Deploy Virt-Who Configurations
-      delegate_to: "{{ inventory_hostname }}"
+    - name: Fetch and Deploy Virt-Who Configurations on Satellite Host
+      remote_user: admin
+      become: true
       block:
         - name: Fetch existing virt-who configurations from Satellite API
           ansible.builtin.uri:
@@ -128,7 +129,7 @@
           register: existing_virt_who_configs
           delegate_to: localhost
 
-        - name: Deploy virt-who script on Satellite host
+        - name: Deploy virt-who script directly on Satellite host
           ansible.builtin.shell: |
             curl -s -k -u "{{ satellite_username }}:{{ satellite_password }}" \
               "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs/{{ item.id }}/script" | bash
