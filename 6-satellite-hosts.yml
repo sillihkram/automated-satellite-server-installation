@@ -24,11 +24,23 @@
     # -------------------------------------------------------------------------
     # Step 1: Establish Certificate Trust
     # -------------------------------------------------------------------------
-    - name: Install Katello CA Consumer RPM from Satellite
+    - name: Download Katello CA Consumer RPM bypassing SSL check
+      ansible.builtin.get_url:
+        url: "https://{{ satellite_fqdn }}/pub/katello-ca-consumer-latest.noarch.rpm"
+        dest: "/tmp/katello-ca-consumer-latest.noarch.rpm"
+        validate_certs: false
+        mode: '0644'
+
+    - name: Install Katello CA Consumer RPM from local file
       ansible.builtin.dnf:
-        name: "https://{{ satellite_fqdn }}/pub/katello-ca-consumer-latest.noarch.rpm"
+        name: "/tmp/katello-ca-consumer-latest.noarch.rpm"
         state: present
         disable_gpg_check: true
+
+    - name: Remove temporary RPM file
+      ansible.builtin.file:
+        path: "/tmp/katello-ca-consumer-latest.noarch.rpm"
+        state: absent
 
     - name: Copy Katello CA to system-wide trust anchors
       ansible.builtin.copy:
