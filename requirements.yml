@@ -2,4 +2,5 @@
 collections:
   - name: redhat.satellite
   - name: redhat.rhel_system_roles
+  - name: community.general
   - name: ansible.posix
