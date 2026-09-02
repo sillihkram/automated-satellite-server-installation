@@ -124,8 +124,6 @@
             - 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs 10'
             - 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs 10'
             - 'Red Hat Satellite Client 6 for RHEL 10 x86_64 (RPMs)'
-          async: 7200
-          poll: 0
 
     - name: Fetch and Deploy Virt-Who Configurations directly on Host
       remote_user: admin
