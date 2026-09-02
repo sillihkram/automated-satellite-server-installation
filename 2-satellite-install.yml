@@ -1,17 +1,7 @@
 ---
 - name: Install and Configure Red Hat Satellite Server
   hosts: all
-  pre_tasks:
-
-    # Temporarily commented out while fapolicyd is disabled.
-    # Placed in pre_tasks so it runs BEFORE the installer role.
-    # - name: Ensure Postgresql has the correct permissions to run
-    #   ansible.builtin.file:
-    #     path: '/usr/bin/postmaster'
-    #     owner: 'postgres'
-    #     group: 'postgres'
-    #     mode: '0755'
-    #     state: 'file'
+  become: true
 
   roles:
     - role: redhat.satellite_operations.installer
