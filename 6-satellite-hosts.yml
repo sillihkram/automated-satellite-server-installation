@@ -1,0 +1,154 @@
+---
+- name: Onboard RHEL Hosts to Satellite, REX, Insights, and AI Services
+  hosts: rhel_hosts
+  remote_user: admin
+  become: true
+  gather_facts: true
+
+  vars:
+    satellite_fqdn: "dschubba.openincite.net"
+    satellite_org: "openincite.net"
+    activation_key: "rhel-soe-dev"
+    katello_ca_cert: "/etc/rhsm/ca/katello-server-ca.pem"
+    
+    # Insights Role Configuration
+    insights_display_name: "{{ ansible_fqdn }}"
+    redhat_portal_username: "" # Left empty so registration routes via Satellite
+    insights_client_auto_config: true
+    
+    # AI / LightSpeed & MCP Endpoint Configurations
+    lightspeed_url: "https://dschubba.openincite.net/api/v2/lightspeed"
+    satellite_mcp_url: "https://dschubba.openincite.net/api/v2/mcp"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. Satellite CA Trust & System Trust Anchor Setup
+    # -------------------------------------------------------------------------
+    - name: Install Katello CA Consumer RPM from Satellite
+      ansible.builtin.dnf:
+        name: "https://{{ satellite_fqdn }}/pub/katello-ca-consumer-latest.noarch.rpm"
+        state: present
+        disable_gpg_check: true
+
+    - name: Add Katello CA to system-wide trust store
+      ansible.builtin.copy:
+        src: "{{ katello_ca_cert }}"
+        dest: /etc/pki/ca-trust/source/anchors/katello-server-ca.pem
+        remote_src: true
+        mode: '0644'
+      notify: Update CA Trust
+
+    - name: Flush handlers to apply trust store updates immediately
+      ansible.builtin.meta: flush_handlers
+
+    # -------------------------------------------------------------------------
+    # 2. Subscription Manager Registration
+    # -------------------------------------------------------------------------
+    - name: Register System to Satellite via Activation Key
+      community.general.redhat_subscription:
+        state: present
+        org_id: "{{ satellite_org }}"
+        activationkey: "{{ activation_key }}"
+        server_hostname: "{{ satellite_fqdn }}"
+        rhsm_baseurl: "https://{{ satellite_fqdn }}/pulp/content"
+        rhsm_repo_ca_cert: "{{ katello_ca_cert }}"
+        auto_attach: true
+        force_register: false
+
+    # -------------------------------------------------------------------------
+    # 3. Remote Execution (Push SSH Key & Pull Yggdrasil Daemon)
+    # -------------------------------------------------------------------------
+    - name: Deploy Satellite SSH Public Key for Push REX
+      ansible.posix.authorized_key:
+        user: root
+        state: present
+        key: "{{ lookup('url', 'https://' + satellite_fqdn + '/pub/remote_execution_ssh_keys.pub', validate_certs=false) }}"
+
+    - name: Install Yggdrasil client packages for Pull REX
+      ansible.builtin.dnf:
+        name:
+          - yggdrasil
+          - foreman_yggdrasil
+        state: present
+      ignore_errors: true
+
+    - name: Ensure Yggdrasil service is active and enabled
+      ansible.builtin.systemd:
+        name: yggdrasild
+        state: started
+        enabled: true
+      ignore_errors: true
+
+    # -------------------------------------------------------------------------
+    # 4. Official Red Hat Insights Registration Role
+    # -------------------------------------------------------------------------
+    - name: Execute Red Hat Insights Client Role
+      ansible.builtin.include_role:
+        name: redhat.insights.insights_client
+
+    # -------------------------------------------------------------------------
+    # 5. Command-Line Assistant (LightSpeed via Local Proxy)
+    # -------------------------------------------------------------------------
+    - name: Install Command-Line Assistant package
+      ansible.builtin.dnf:
+        name: command-line-assistant
+        state: present
+
+    - name: Ensure Command-Line Assistant configuration directory exists
+      ansible.builtin.file:
+        path: /etc/command-line-assistant
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Configure Command-Line Assistant TOML Profile
+      ansible.builtin.copy:
+        dest: /etc/command-line-assistant/config.toml
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [provider]
+          type = "lightspeed"
+          url = "{{ lightspeed_url }}"
+          tls_skip_verify = true
+          ca_cert = "{{ katello_ca_cert }}"
+
+    # -------------------------------------------------------------------------
+    # 6. Goose AI & Model Context Protocol (MCP) Integration
+    # -------------------------------------------------------------------------
+    - name: Install goose-redhat package
+      ansible.builtin.dnf:
+        name: goose-redhat
+        state: present
+
+    - name: Ensure Goose configuration directory exists
+      ansible.builtin.file:
+        path: /etc/goose
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Configure Goose System-Wide YAML Profile for Satellite MCP
+      ansible.builtin.copy:
+        dest: /etc/goose/config.yaml
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          GOOSE_PROVIDER: "lightspeed"
+          LIGHTSPEED_URL: "{{ lightspeed_url }}"
+          SSL_VERIFY: false
+          extensions:
+            satellite_mcp:
+              type: "mcp"
+              enabled: true
+              uri: "{{ satellite_mcp_url }}"
+              dangerously_allow_insecure: true
+
+  handlers:
+    - name: Update CA Trust
+      ansible.builtin.command:
+        cmd: update-ca-trust
