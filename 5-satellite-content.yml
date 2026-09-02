@@ -1,6 +1,7 @@
 ---
 - name: Configure Satellite Content Views and Activation Keys
   hosts: localhost
+  connection: local
   gather_facts: false
   run_once: true
 
