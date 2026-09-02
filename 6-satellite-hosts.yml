@@ -11,47 +11,32 @@
     activation_key: "rhel-soe-dev"
     katello_ca_cert: "/etc/rhsm/ca/katello-server-ca.pem"
     
-    # AI / LightSpeed & MCP Endpoint Configurations
+    # AI / LightSpeed & MCP Endpoints
     lightspeed_url: "https://dschubba.openincite.net/api/v2/lightspeed"
     satellite_mcp_url: "https://dschubba.openincite.net/api/v2/mcp"
 
   tasks:
     # -------------------------------------------------------------------------
-    # Step 1: Establish Certificate Trust
+    # Step 1: Trust CA & Register RHSM
     # -------------------------------------------------------------------------
-    - name: Download Katello CA Consumer RPM bypassing SSL check
+    - name: Download and install Katello CA Consumer RPM
       ansible.builtin.get_url:
         url: "https://{{ satellite_fqdn }}/pub/katello-ca-consumer-latest.noarch.rpm"
         dest: "/tmp/katello-ca-consumer-latest.noarch.rpm"
         validate_certs: false
         mode: '0644'
+      notify: Install Katello CA RPM
 
-    - name: Install Katello CA Consumer RPM from local file
-      ansible.builtin.dnf:
-        name: "/tmp/katello-ca-consumer-latest.noarch.rpm"
-        state: present
-        disable_gpg_check: true
-
-    - name: Remove temporary RPM file
-      ansible.builtin.file:
-        path: "/tmp/katello-ca-consumer-latest.noarch.rpm"
-        state: absent
-
-    - name: Copy Katello CA to system-wide trust anchors
-      ansible.builtin.copy:
-        src: "{{ katello_ca_cert }}"
-        dest: /etc/pki/ca-trust/source/anchors/katello-server-ca.pem
-        remote_src: true
-        mode: '0644'
-      notify: Update CA Trust
-
-    - name: Force immediate update of system trust store
+    - name: Flush handlers to ensure Katello CA is installed before registration
       ansible.builtin.meta: flush_handlers
 
-    # -------------------------------------------------------------------------
-    # Step 2: Register via redhat_subscription System Role Module (Forced Re-bind)
-    # -------------------------------------------------------------------------
-    - name: Register system using redhat_subscription module
+    - name: Purge stale subscription identity data
+      ansible.builtin.command:
+        cmd: subscription-manager clean
+      failed_when: false
+      changed_when: false
+
+    - name: Register system to Satellite via Activation Key
       redhat.rhel_system_roles.redhat_subscription:
         state: present
         org_id: "{{ satellite_org }}"
@@ -59,12 +44,11 @@
         server_hostname: "{{ satellite_fqdn }}"
         rhsm_baseurl: "https://{{ satellite_fqdn }}/pulp/content"
         rhsm_repo_ca_cert: "{{ katello_ca_cert }}"
-        force_register: true
 
     # -------------------------------------------------------------------------
-    # Step 3: Install All Software Packages (Now that RHSM is active)
+    # Step 2: Install Packages & Deploy SSH REX Key
     # -------------------------------------------------------------------------
-    - name: Install REX, Insights, and AI Packages
+    - name: Install REX, Insights, and AI packages
       ansible.builtin.dnf:
         name:
           - insights-client
@@ -75,16 +59,13 @@
         state: present
       ignore_errors: true
 
-    # -------------------------------------------------------------------------
-    # Step 4: Configure Remote Execution (Push & Pull)
-    # -------------------------------------------------------------------------
     - name: Deploy Satellite SSH Public Key for Push REX
       ansible.posix.authorized_key:
         user: root
         state: present
         key: "{{ lookup('url', 'https://' + satellite_fqdn + '/pub/remote_execution_ssh_keys.pub', validate_certs=false) }}"
 
-    - name: Ensure Yggdrasil daemon is active for Pull REX
+    - name: Ensure Yggdrasil service is running for Pull REX
       ansible.builtin.systemd:
         name: yggdrasild
         state: started
@@ -92,21 +73,17 @@
       ignore_errors: true
 
     # -------------------------------------------------------------------------
-    # Step 5: Configure & Execute Insights Client
+    # Step 3: Configure Insights Client
     # -------------------------------------------------------------------------
-    - name: Ensure insights-client.conf has Satellite CA verification
+    - name: Configure Insights Client for Satellite proxy
       ansible.builtin.lineinfile:
         path: /etc/insights-client/insights-client.conf
-        regexp: '^#?cert_verify='
-        line: "cert_verify={{ katello_ca_cert }}"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
         state: present
-
-    - name: Ensure insights-client.conf points to Satellite proxy endpoint
-      ansible.builtin.lineinfile:
-        path: /etc/insights-client/insights-client.conf
-        regexp: '^#?base_url='
-        line: "base_url=https://{{ satellite_fqdn }}/redhat_access/r/insights"
-        state: present
+      loop:
+        - { regexp: '^#?cert_verify=', line: "cert_verify={{ katello_ca_cert }}" }
+        - { regexp: '^#?base_url=', line: "base_url=https://{{ satellite_fqdn }}/redhat_access/r/insights" }
 
     - name: Register host with Red Hat Insights
       ansible.builtin.command:
@@ -116,7 +93,7 @@
       failed_when: false
 
     # -------------------------------------------------------------------------
-    # Step 6: Configure AI Tools (Command-Line Assistant & Goose)
+    # Step 4: Configure Local AI Tools (Command-Line Assistant & Goose)
     # -------------------------------------------------------------------------
     - name: Configure Command-Line Assistant
       ansible.builtin.copy:
@@ -149,6 +126,14 @@
               dangerously_allow_insecure: true
 
   handlers:
-    - name: Update CA Trust
-      ansible.builtin.command:
-        cmd: update-ca-trust
+    - name: Install Katello CA RPM
+      ansible.builtin.dnf:
+        name: "/tmp/katello-ca-consumer-latest.noarch.rpm"
+        state: present
+        disable_gpg_check: true
+
+    - name: Cleanup temporary RPM
+      ansible.builtin.file:
+        path: "/tmp/katello-ca-consumer-latest.noarch.rpm"
+        state: absent
+      listen: Install Katello CA RPM
