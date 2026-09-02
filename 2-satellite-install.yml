@@ -28,3 +28,34 @@
         satellite_cloud_connector_url: '{{ satellite_url }}'
         satellite_cloud_connector_user: '{{ satellite_username }}'
         satellite_cloud_connector_password: '{{ satellite_password }}'
+
+  post_tasks:
+    # -------------------------------------------------------------------------
+    # Publish Foreman Proxy SSH Key for Push REX Onboarding
+    # -------------------------------------------------------------------------
+    - name: Ensure Satellite public web folder exists
+      ansible.builtin.file:
+        path: /var/www/html/pub
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Find generated Foreman Proxy SSH public key
+      ansible.builtin.find:
+        paths: /usr/share/foreman-proxy/.ssh
+        patterns: "id_*.pub"
+      register: foreman_proxy_keys
+
+    - name: Copy Foreman Proxy SSH public key to web root
+      ansible.builtin.copy:
+        src: "{{ foreman_proxy_keys.files[0].path }}"
+        dest: /var/www/html/pub/remote_execution_ssh_keys.pub
+        remote_src: true
+        owner: root
+        group: root
+        mode: '0644'
+        seuser: system_u
+        serole: object_r
+        setype: httpd_sys_content_t
+      when: foreman_proxy_keys.matched > 0
