@@ -117,7 +117,7 @@
     # -------------------------------------------------------------------------
     - name: Configure Command-Line Assistant
       ansible.builtin.copy:
-        dest: /etc/command-line-assistant/config.toml
+        dest: /etc/xdg/command-line-assistant/config.toml
         owner: root
         group: root
         mode: '0644'
@@ -128,9 +128,17 @@
           tls_skip_verify = true
           ca_cert = "{{ katello_ca_cert }}"
 
+    - name: Ensure Goose system configuration directory exists
+      ansible.builtin.file:
+        path: /etc/goose-redhat
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
     - name: Configure Goose System-Wide Profile for Satellite MCP
       ansible.builtin.copy:
-        dest: /etc/goose/config.yaml
+        dest: /etc/goose-redhat/config.yaml
         owner: root
         group: root
         mode: '0644'
