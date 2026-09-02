@@ -7,7 +7,7 @@
 
   vars:
     satellite_fqdn: "dschubba.openincite.net"
-    satellite_org: "openincite_net"
+    satellite_org: "openincite_net"  # Exact Satellite Org LABEL
     activation_key: "rhel-soe-dev"
     katello_ca_cert: "/etc/rhsm/ca/katello-server-ca.pem"
     
@@ -19,16 +19,23 @@
     # -------------------------------------------------------------------------
     # Step 1: Trust CA & Register RHSM
     # -------------------------------------------------------------------------
-    - name: Download and install Katello CA Consumer RPM
+    - name: Download Katello CA Consumer RPM bypassing SSL check
       ansible.builtin.get_url:
         url: "https://{{ satellite_fqdn }}/pub/katello-ca-consumer-latest.noarch.rpm"
         dest: "/tmp/katello-ca-consumer-latest.noarch.rpm"
         validate_certs: false
         mode: '0644'
-      notify: Install Katello CA RPM
 
-    - name: Flush handlers to ensure Katello CA is installed before registration
-      ansible.builtin.meta: flush_handlers
+    - name: Install Katello CA Consumer RPM
+      ansible.builtin.dnf:
+        name: "/tmp/katello-ca-consumer-latest.noarch.rpm"
+        state: present
+        disable_gpg_check: true
+
+    - name: Cleanup temporary RPM
+      ansible.builtin.file:
+        path: "/tmp/katello-ca-consumer-latest.noarch.rpm"
+        state: absent
 
     - name: Purge stale subscription identity data
       ansible.builtin.command:
@@ -46,8 +53,13 @@
         rhsm_repo_ca_cert: "{{ katello_ca_cert }}"
 
     # -------------------------------------------------------------------------
-    # Step 2: Install Packages & Deploy SSH REX Key
+    # Step 2: Enable Extensions Repository & Install Packages
     # -------------------------------------------------------------------------
+    - name: Enable OS-specific Extensions repository
+      redhat.rhel_system_roles.rhsm_repository:
+        name: "rhel-{{ ansible_distribution_major_version }}-for-x86_64-extensions-rpms"
+        state: enabled
+
     - name: Install REX, Insights, and AI packages
       ansible.builtin.dnf:
         name:
@@ -57,13 +69,22 @@
           - yggdrasil
           - foreman_yggdrasil
         state: present
-      ignore_errors: true
+
+    # -------------------------------------------------------------------------
+    # Step 3: Configure Remote Execution (Push & Pull)
+    # -------------------------------------------------------------------------
+    - name: Fetch Satellite SSH Public Key
+      ansible.builtin.set_fact:
+        rex_pub_key: "{{ lookup('url', 'https://' + satellite_fqdn + '/pub/remote_execution_ssh_keys.pub', validate_certs=false, errors='ignore') }}"
 
     - name: Deploy Satellite SSH Public Key for Push REX
       ansible.posix.authorized_key:
         user: root
         state: present
-        key: "{{ lookup('url', 'https://' + satellite_fqdn + '/pub/remote_execution_ssh_keys.pub', validate_certs=false) }}"
+        key: "{{ rex_pub_key }}"
+      when: 
+        - rex_pub_key is defined
+        - rex_pub_key | length > 0
 
     - name: Ensure Yggdrasil service is running for Pull REX
       ansible.builtin.systemd:
@@ -73,7 +94,7 @@
       ignore_errors: true
 
     # -------------------------------------------------------------------------
-    # Step 3: Configure Insights Client
+    # Step 4: Configure & Register Insights Client
     # -------------------------------------------------------------------------
     - name: Configure Insights Client for Satellite proxy
       ansible.builtin.lineinfile:
@@ -93,7 +114,7 @@
       failed_when: false
 
     # -------------------------------------------------------------------------
-    # Step 4: Configure Local AI Tools (Command-Line Assistant & Goose)
+    # Step 5: Configure Local AI Tools (Command-Line Assistant & Goose)
     # -------------------------------------------------------------------------
     - name: Configure Command-Line Assistant
       ansible.builtin.copy:
@@ -124,16 +145,3 @@
               enabled: true
               uri: "{{ satellite_mcp_url }}"
               dangerously_allow_insecure: true
-
-  handlers:
-    - name: Install Katello CA RPM
-      ansible.builtin.dnf:
-        name: "/tmp/katello-ca-consumer-latest.noarch.rpm"
-        state: present
-        disable_gpg_check: true
-
-    - name: Cleanup temporary RPM
-      ansible.builtin.file:
-        path: "/tmp/katello-ca-consumer-latest.noarch.rpm"
-        state: absent
-      listen: Install Katello CA RPM
