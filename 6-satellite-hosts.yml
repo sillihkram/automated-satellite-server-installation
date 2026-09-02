@@ -112,8 +112,16 @@
       failed_when: false
 
     # -------------------------------------------------------------------------
-    # Step 5: Configure Local AI Tools (Command-Line Assistant & Goose)
+    # Step 5: Configure Local AI Tools & Start Daemon Services
     # -------------------------------------------------------------------------
+    - name: Ensure Command-Line Assistant configuration directory exists
+      ansible.builtin.file:
+        path: /etc/xdg/command-line-assistant
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
     - name: Configure Command-Line Assistant
       ansible.builtin.copy:
         dest: /etc/xdg/command-line-assistant/config.toml
@@ -126,6 +134,12 @@
           url = "{{ lightspeed_url }}"
           tls_skip_verify = true
           ca_cert = "{{ katello_ca_cert }}"
+
+    - name: Enable and start Command-Line Assistant daemon service (clad)
+      ansible.builtin.systemd:
+        name: clad.service
+        state: restarted
+        enabled: true
 
     - name: Ensure Goose system configuration directory exists
       ansible.builtin.file:
