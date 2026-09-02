@@ -71,4 +71,9 @@
         name: "{{ activation_key }}"
         lifecycle_environment: "{{ lifecycle_environment }}"
         content_view: "{{ content_view }}"
+        repository_sets:
+          - name: 'Red Hat Enterprise Linux 9 for x86_64 - Extensions RPMs 9'
+            state: enabled
+          - name: 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs 10'
+            state: enabled
         state: present
