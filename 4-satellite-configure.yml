@@ -12,7 +12,7 @@
       - { name: 'vhost01', url: '192.168.1.21' }
 
   tasks:
-    - name: Configure Satellite Server API Resources and Repositories
+    - name: Configure Satellite Server Resources and Repositories
       delegate_to: localhost
       run_once: true
       block:
@@ -60,6 +60,29 @@
             status_code: [200, 201, 422]
             validate_certs: false
           loop: "{{ vcenters }}"
+
+        - name: Fetch existing virt-who configurations from Satellite API
+          ansible.builtin.uri:
+            url: "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs"
+            user: "{{ satellite_username }}"
+            password: "{{ satellite_password }}"
+            method: GET
+            force_basic_auth: true
+            validate_certs: false
+          register: existing_virt_who_configs
+
+        - name: Trigger virt-who configuration deployment via API
+          ansible.builtin.uri:
+            url: "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs/{{ item.id }}/deploy"
+            user: "{{ satellite_username }}"
+            password: "{{ satellite_password }}"
+            method: POST
+            force_basic_auth: true
+            body_format: json
+            status_code: [200, 201, 202]
+            validate_certs: false
+          loop: "{{ existing_virt_who_configs.json.results }}"
+          when: item.name in ['virt-who-vhost00', 'virt-who-vhost01']
 
         - name: Enable RHEL 9 and 10 Repositories (BaseOS, AppStream, Extensions)
           redhat.satellite.repository_set:
@@ -113,32 +136,3 @@
             - 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs'
           async: 7200
           poll: 0
-
-        - name: Deploy Virt-Who Configurations via Satellite Engine
-          remote_user: admin
-          become: true
-          block:
-            - name: Fetch existing virt-who configurations from Satellite API
-              ansible.builtin.uri:
-                url: "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs"
-                user: "{{ satellite_username }}"
-                password: "{{ satellite_password }}"
-                method: GET
-                force_basic_auth: true
-                validate_certs: false
-              register: existing_virt_who_configs
-              delegate_to: localhost
-
-        - name: Trigger virt-who configuration deployment
-          ansible.builtin.uri:
-            url: "{{ satellite_url }}/foreman_virt_who_configure/api/v2/configs/{{ item.id }}/deploy"
-            user: "{{ satellite_username }}"
-            password: "{{ satellite_password }}"
-            method: POST
-            force_basic_auth: true
-            body_format: json
-            status_code: [200, 201, 202]
-            validate_certs: false
-          loop: "{{ existing_virt_who_configs.json.results }}"
-          when: item.name in ['virt-who-vhost00', 'virt-who-vhost01']
-          delegate_to: localhost
