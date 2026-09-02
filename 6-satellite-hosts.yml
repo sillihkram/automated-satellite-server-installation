@@ -90,9 +90,8 @@
         - rex_pub_key is defined
         - rex_pub_key | length > 0
 
-
     # -------------------------------------------------------------------------
-    # Step 4: Configure & Register Insights Client (Deterministic INI method)
+    # Step 4: Configure & Register Insights Client
     # -------------------------------------------------------------------------
     - name: Configure Insights Client for Satellite proxy
       community.general.ini_file:
@@ -148,7 +147,8 @@
           SSL_VERIFY: false
           extensions:
             satellite_mcp:
-              type: "mcp"
-              enabled: true
+              name: "satellite_mcp"
+              type: "sse"
               uri: "{{ satellite_mcp_url }}"
-              dangerously_allow_insecure: true
+              envs:
+                NODE_TLS_REJECT_UNAUTHORIZED: "0"
