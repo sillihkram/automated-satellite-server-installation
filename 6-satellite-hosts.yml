@@ -67,17 +67,29 @@
     # Step 3: Configure Push Remote Execution (SSH Key)
     # -------------------------------------------------------------------------
     - name: Fetch Satellite SSH Public Key
+      ansible.builtin.uri:
+        url: "https://{{ satellite_fqdn }}:9090/ssh/pubkey"
+        validate_certs: false
+        return_content: true
+      register: rex_key_result
+      ignore_errors: true
+
+    - name: Set REX public key fact
       ansible.builtin.set_fact:
-        rex_pub_key: "{{ lookup('url', 'https://' + satellite_fqdn + '/pub/remote_execution_ssh_keys.pub', validate_certs=false, errors='ignore') }}"
+        rex_pub_key: "{{ rex_key_result.content | trim }}"
+      when: 
+        - rex_key_result.json is defined or rex_key_result.content is defined
+        - rex_key_result.status == 200
 
     - name: Deploy Satellite SSH Public Key for Push REX
       ansible.posix.authorized_key:
         user: root
         state: present
         key: "{{ rex_pub_key }}"
-      when: 
+      when:
         - rex_pub_key is defined
         - rex_pub_key | length > 0
+
 
     # -------------------------------------------------------------------------
     # Step 4: Configure & Register Insights Client (Deterministic INI method)
