@@ -41,11 +41,11 @@
             product: "{{ satellite_product }}"
           - name: 'Red Hat Enterprise Linux 9 for x86_64 - Extensions RPMs 9'
             product: "{{ satellite_product }}"
-          - name: 'Red Hat Enterprise Linux 10 for x86_64 - BaseOS RPMs'
+          - name: 'Red Hat Enterprise Linux 10 for x86_64 - BaseOS RPMs 10'
             product: "{{ satellite_product }}"
-          - name: 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs'
+          - name: 'Red Hat Enterprise Linux 10 for x86_64 - AppStream RPMs 10'
             product: "{{ satellite_product }}"
-          - name: 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs'
+          - name: 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs 10'
             product: "{{ satellite_product }}"
         state: present
 
