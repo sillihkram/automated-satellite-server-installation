@@ -9,7 +9,7 @@
     satellite_org: "openincite.net"
     satellite_product: "Red Hat Enterprise Linux for x86_64"
     
-    # Updated Clean Variable Names
+    # Environment & Content View Definitions
     lifecycle_environment: "Development"
     content_view: "RHEL-SOE"
     activation_key: "rhel-soe-dev"
