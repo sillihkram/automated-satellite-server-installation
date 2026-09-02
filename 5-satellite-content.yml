@@ -61,7 +61,7 @@
           - "{{ lifecycle_environment }}"
         state: present
 
-    - name: Create Activation Key
+    - name: Create Activation Key with Extensions Enabled
       redhat.satellite.activation_key:
         server_url: "{{ satellite_url }}"
         username: "{{ satellite_username }}"
@@ -71,9 +71,9 @@
         name: "{{ activation_key }}"
         lifecycle_environment: "{{ lifecycle_environment }}"
         content_view: "{{ content_view }}"
-        repository_sets:
-          - name: 'Red Hat Enterprise Linux 9 for x86_64 - Extensions RPMs 9'
-            state: enabled
-          - name: 'Red Hat Enterprise Linux 10 for x86_64 - Extensions RPMs 10'
-            state: enabled
+        content_overrides:
+          - label: "rhel-9-for-x86_64-extensions-rpms"
+            override_name: "enabled"
+          - label: "rhel-10-for-x86_64-extensions-rpms"
+            override_name: "enabled"
         state: present
