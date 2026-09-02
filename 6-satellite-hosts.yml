@@ -49,7 +49,7 @@
       ansible.builtin.meta: flush_handlers
 
     # -------------------------------------------------------------------------
-    # Step 2: Register via redhat_subscription System Role Module
+    # Step 2: Register via redhat_subscription System Role Module (Forced Re-bind)
     # -------------------------------------------------------------------------
     - name: Register system using redhat_subscription module
       redhat.rhel_system_roles.redhat_subscription:
@@ -59,7 +59,7 @@
         server_hostname: "{{ satellite_fqdn }}"
         rhsm_baseurl: "https://{{ satellite_fqdn }}/pulp/content"
         rhsm_repo_ca_cert: "{{ katello_ca_cert }}"
-        force_register: false
+        force_register: true
 
     # -------------------------------------------------------------------------
     # Step 3: Install All Software Packages (Now that RHSM is active)
