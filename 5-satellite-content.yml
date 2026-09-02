@@ -71,5 +71,4 @@
         name: "{{ activation_key }}"
         lifecycle_environment: "{{ lifecycle_environment }}"
         content_view: "{{ content_view }}"
-        auto_attach: true
         state: present
