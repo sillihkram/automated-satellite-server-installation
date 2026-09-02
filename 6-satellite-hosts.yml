@@ -1,6 +1,7 @@
 ---
 - name: Onboard RHEL Hosts to Satellite, REX, Insights, and AI Services
   hosts: all
+  remote_user: admin
   become: true
   gather_facts: true
 
