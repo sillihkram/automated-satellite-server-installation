@@ -12,7 +12,7 @@
     katello_ca_cert: "/etc/rhsm/ca/katello-server-ca.pem"
     
     # AI / LightSpeed & MCP Endpoints
-    lightspeed_url: "https://dschubba.openincite.net/api/v2/lightspeed"
+    lightspeed_url: "https://dschubba.openincite.net/api/lightspeed/v1"
     satellite_mcp_url: "https://dschubba.openincite.net/api/v2/mcp"
     
     # Satellite Personal Access Token (Pass via CLI: -e "satellite_token=YOUR_PAT")
