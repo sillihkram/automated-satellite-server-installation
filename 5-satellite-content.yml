@@ -8,10 +8,10 @@
     satellite_org: "openincite.net"
     satellite_product: "Red Hat Enterprise Linux for x86_64"
     
-    # SOE Naming Convention
-    lifecycle_env_name: "Development"
-    content_view_name: "RHEL-SOE"
-    activation_key_name: "rhel-soe-dev"
+    # Updated Clean Variable Names
+    lifecycle_environment: "Development"
+    content_view: "RHEL-SOE"
+    activation_key: "rhel-soe-dev"
 
   tasks:
     - name: Create Lifecycle Environment
@@ -21,7 +21,7 @@
         password: "{{ satellite_password }}"
         validate_certs: false
         organization: "{{ satellite_org }}"
-        name: "{{ lifecycle_env_name }}"
+        name: "{{ lifecycle_environment }}"
         prior: "Library"
         state: present
 
@@ -32,7 +32,7 @@
         password: "{{ satellite_password }}"
         validate_certs: false
         organization: "{{ satellite_org }}"
-        name: "{{ content_view_name }}"
+        name: "{{ content_view }}"
         repositories:
           - name: 'Red Hat Enterprise Linux 9 for x86_64 - BaseOS RPMs 9'
             product: "{{ satellite_product }}"
@@ -55,9 +55,9 @@
         password: "{{ satellite_password }}"
         validate_certs: false
         organization: "{{ satellite_org }}"
-        content_view: "{{ content_view_name }}"
+        content_view: "{{ content_view }}"
         lifecycle_environments:
-          - "{{ lifecycle_env_name }}"
+          - "{{ lifecycle_environment }}"
         state: present
 
     - name: Create Activation Key
@@ -67,8 +67,8 @@
         password: "{{ satellite_password }}"
         validate_certs: false
         organization: "{{ satellite_org }}"
-        name: "{{ activation_key_name }}"
-        lifecycle_environment: "{{ lifecycle_env_name }}"
-        content_view: "{{ content_view_name }}"
+        name: "{{ activation_key }}"
+        lifecycle_environment: "{{ lifecycle_environment }}"
+        content_view: "{{ content_view }}"
         auto_attach: true
         state: present
