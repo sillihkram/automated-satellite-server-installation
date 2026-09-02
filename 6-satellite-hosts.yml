@@ -7,7 +7,7 @@
 
   vars:
     satellite_fqdn: "dschubba.openincite.net"
-    satellite_org: "openincite.net"
+    satellite_org: "openincite_net"
     activation_key: "rhel-soe-dev"
     katello_ca_cert: "/etc/rhsm/ca/katello-server-ca.pem"
     
