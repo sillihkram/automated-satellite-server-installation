@@ -45,7 +45,7 @@
             force_basic_auth: true
             body_format: json
             body:
-              organization_id: "{{ satellite_org }}"
+              organization_id: 1  # Use numeric ID (or "{{ satellite_org_id }}")
               foreman_virt_who_configure_config:
                 name: "virt-who-{{ item.name }}"
                 hypervisor_type: "esx"
@@ -54,7 +54,7 @@
                 hypervisor_password: "{{ vmware_password }}"
                 interval: "60"
                 hypervisor_id: "hostname"
-                filtering_mode: 0
+                filtering_mode: "none"
             status_code: [200, 201, 422]
             validate_certs: false
           loop: "{{ vcenters }}"
